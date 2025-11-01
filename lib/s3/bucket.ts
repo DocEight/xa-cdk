@@ -41,7 +41,7 @@ export class CrossAccountS3Bucket extends Construct {
     this.role = new Role(this, "xa-mgmt-role", {
       assumedBy: new AccountRootPrincipal(), // placeholder
       description: `IAM role to enable cross-account management of policy for ${this.bucket.bucketName}`,
-      roleName: `${this.bucket.bucketName}-xa-mgmt`,
+      roleName: `${this.bucket.bucketName}-xa-mgmt`.slice(0, 64),
       inlinePolicies: {
         UpdateBucketPolicy: new PolicyDocument({
           statements: [
