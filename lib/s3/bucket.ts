@@ -36,12 +36,20 @@ export class CrossAccountS3Bucket extends Construct {
 
     const { xaAwsIds, ...bucketProps } = props;
 
+    // The updater Lambda's execution role will have 11 characters appended to it
+    // so let's keep the bucket name to 52 characters or less
+    if ((bucketProps.bucketName?.length ?? 0) > 52) {
+      throw new Error(
+        `Bucket name "${bucketProps.bucketName}" must be 52 characters or less.`,
+      );
+    }
+
     this.bucket = new Bucket(this, "xa-bucket", bucketProps);
 
     this.role = new Role(this, "xa-mgmt-role", {
       assumedBy: new AccountRootPrincipal(), // placeholder
       description: `IAM role to enable cross-account management of policy for ${this.bucket.bucketName}`,
-      roleName: `${this.bucket.bucketName}-xa-mgmt`.slice(0, 64),
+      roleName: `${this.bucket.bucketName}-xa-mgmt`,
       inlinePolicies: {
         UpdateBucketPolicy: new PolicyDocument({
           statements: [
@@ -54,15 +62,17 @@ export class CrossAccountS3Bucket extends Construct {
         }),
       },
     });
-    for (const xaAwsId of xaAwsIds) {
-      const roleName = `${this.bucket.bucketName}-xa-mgmt-execution-role`.slice(
-        0,
-        64,
-      );
-      this.role.grantAssumeRole(
-        new ArnPrincipal(`arn:aws:iam::${xaAwsId}:role/${roleName}`),
-      );
-    }
+
+    const roleName = `${this.bucket.bucketName}-xa-mgmt-ex`;
+    this.role.assumeRolePolicy?.addStatements(
+      new PolicyStatement({
+        effect: Effect.ALLOW,
+        principals: xaAwsIds.map(
+          (id) => new ArnPrincipal(`arn:aws:iam::${id}:role/${roleName}`),
+        ),
+        actions: ["sts:AssumeRole"],
+      }),
+    );
 
     new CfnOutput(this, "bucket-name", {
       value: this.bucket.bucketName,

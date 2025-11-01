@@ -76,12 +76,7 @@ export class CrossAccountS3BucketManager extends Construct {
         new PolicyStatement({
           effect: Effect.ALLOW,
           actions: ["sts:AssumeRole"],
-          resources: [
-            `arn:aws:iam::${bucketAwsId}:role/${bucketName}-xa-mgmt`.slice(
-              0,
-              64,
-            ),
-          ],
+          resources: [`arn:aws:iam::${bucketAwsId}:role/${bucketName}-xa-mgmt`],
         }),
       ],
     });
@@ -92,6 +87,7 @@ export class CrossAccountS3BucketManager extends Construct {
       inlinePolicies: {
         AssumeXaMgmtRole: assumeXaMgmtRole,
       },
+      roleName: `${bucketName}-xa-mgmt-ex`,
     });
 
     this.function = new Function(this, "xa-mgmt-lambda", {
