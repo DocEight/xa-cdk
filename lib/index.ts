@@ -1,1 +1,5 @@
-export { CrossAccountS3Bucket } from "./s3";
+export { CrossAccountS3Bucket, CrossAccountS3BucketManager } from "./s3";
+export type {
+  CrossAccountS3BucketProps,
+  CrossAccountS3BucketManagerProps,
+} from "./s3";

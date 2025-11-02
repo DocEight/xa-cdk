@@ -10,12 +10,13 @@ import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
 import {
   AwsCustomResource,
   AwsCustomResourcePolicy,
+  PhysicalResourceId,
 } from "aws-cdk-lib/custom-resources";
 import { Construct } from "constructs";
 import path from "path";
 
 interface Registry {
-  [bucketName: string]: { [service: string]: Set<string> };
+  [bucketName: string]: Set<string> | false;
 }
 
 export interface CrossAccountS3BucketManagerProps {
@@ -43,12 +44,21 @@ export interface CrossAccountS3BucketManagerProps {
  *   - allowCloudfront(bucketName, cloudfrontId)
  */
 export class CrossAccountS3BucketManager extends Construct {
-  /** Static registry mapping bucketNames to services to resource IDs that need access */
-  private static registry: Registry = {};
+  /** Static registry mapping bucketNames to CloudFront Distribution IDs that need access */
+  private static cloudfrontRegistry: Registry = {};
 
-  /** Returns a sorted list of the set of Cloudfront Distribution IDs in the registry */
-  private static getCloudfrontAccessors(bucketName: string): string[] {
-    return [...(this.registry[bucketName]?.["cloudfront"] ?? [])].sort();
+  /**
+   * Returns a sorted list of the set of Cloudfront Distribution IDs in the registry and
+   * sets the manager to created
+   */
+  private static consumeCloudfrontAccessors(bucketName: string): string[] {
+    const accessors = [
+      ...(this.cloudfrontRegistry[bucketName]
+        ? this.cloudfrontRegistry[bucketName]
+        : []),
+    ].sort();
+    this.cloudfrontRegistry[bucketName] = false;
+    return accessors;
   }
 
   /**
@@ -67,8 +77,8 @@ export class CrossAccountS3BucketManager extends Construct {
     const {
       bucketName,
       bucketAwsId,
-      managerTimeout = 30,
-      callerTimeout = 30,
+      managerTimeout = 30, // default timeout of 3 seconds is awful short/fragile
+      callerTimeout = 30, // default timeout of 3 seconds is awful short/fragile
     } = props;
 
     const assumeXaMgmtRole = new PolicyDocument({
@@ -94,15 +104,16 @@ export class CrossAccountS3BucketManager extends Construct {
       code: Code.fromAsset(path.join(__dirname, "lambda-code")),
       handler: "main.handler",
       runtime: Runtime.PYTHON_3_13,
-      timeout: Duration.seconds(managerTimeout), // default timeout of 3 seconds is awful short/fragile
+      timeout: Duration.seconds(managerTimeout),
       role,
     });
 
     const cloudfrontDistributionIds =
-      CrossAccountS3BucketManager.getCloudfrontAccessors(bucketName);
+      CrossAccountS3BucketManager.consumeCloudfrontAccessors(bucketName);
 
     const callFor = (operation: string) => {
       return {
+        physicalResourceId: PhysicalResourceId.of("xa-mgmt-lambda-caller"),
         service: "Lambda",
         action: "InvokeFunction",
         parameters: {
@@ -128,10 +139,12 @@ export class CrossAccountS3BucketManager extends Construct {
   }
 
   public static allowCloudfront(bucketName: string, cloudfrontId: string) {
-    if (!(bucketName in this.registry)) {
-      this.registry[bucketName] = {};
-      this.registry[bucketName]["cloudfront"] = new Set<string>();
+    if (this.cloudfrontRegistry[bucketName] === false) {
+      throw new Error(
+        `Cannot register resources for bucket ${bucketName} manager after creation.`,
+      );
     }
-    this.registry[bucketName]["cloudfront"].add(cloudfrontId);
+    this.cloudfrontRegistry[bucketName] ??= new Set<string>();
+    this.cloudfrontRegistry[bucketName].add(cloudfrontId);
   }
 }
