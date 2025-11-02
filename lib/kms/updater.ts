@@ -19,71 +19,69 @@ interface Registry {
   [key: string]: Set<string> | false;
 }
 
-export interface CrossAccountS3BucketManagerProps {
-  bucketName: string;
-  bucketAwsId: string;
+export interface CrossAccountKmsKeyManagerProps {
+  keyId: string;
+  keyAwsId: string;
   managerTimeout?: number;
   callerTimeout?: number;
 }
 
 /**
- * CrossAccountS3BucketManager creates a Lambda function and calls it at deployment
+ * CrossAccountKmsKeyManager creates a Lambda function and calls it at deployment
  * time using an AwsCustomResource (Lambda:InvokeFunction).
  *
  * @remarks
- * - `bucketName` should be the name of the S3 bucket in the other account whose
+ * - `keyId` should be the ID of the KMS key in the other account whose
  *   policy we want to manage.
- * - `bucketAwsId` should be the ID of the AWS account the aforementioned bucket
+ * - `keyAwsId` should be the ID of the AWS account the aforementioned key
  *   belongs to.
  * - `managerTimeout` is optional and specifies the number of seconds for the manager
  *   Lambda Function's timeout (defaults to 30).
  * - `callerTimeout` is optional and specifies the number of seconds for the
  *   AwsCustomResource's timeout (defaults to 30).
  * - To use this construct, first register the resources that need to access a given
- *   S3 Bucket using one of the following static registry functions:
- *   - allowCloudfront(bucketName, cloudfrontId)
+ *   KMS key using one of the following static registry functions:
+ *   - allowCloudfront(keyId, cloudfrontId)
  */
-export class CrossAccountS3BucketManager extends Construct {
-  /** Static registry mapping bucketNames to CloudFront Distribution IDs that need access */
+export class CrossAccountKmsKeyManager extends Construct {
+  /** Static registry mapping keyIds to CloudFront Distribution IDs that need access */
   private static cloudfrontRegistry: Registry = {};
-  /** Static registry mapping to CloudFront Distribution IDs to S3 permissions */
+  /** Static registry mapping to CloudFront Distribution IDs to KMS permissions */
   private static cloudfrontPermissionsRegistry: Registry = {};
 
   /**
    * Returns a sorted list of the set of Cloudfront Distribution IDs in the registry and
    * sets the manager to created
    */
-  private static consumeCloudfrontAccessors(bucketName: string): string[] {
+  private static consumeCloudfrontAccessors(keyId: string): string[] {
     const accessors = [
-      ...(this.cloudfrontRegistry[bucketName]
-        ? this.cloudfrontRegistry[bucketName]
-        : []),
+      ...(this.cloudfrontRegistry[keyId] ? this.cloudfrontRegistry[keyId] : []),
     ].sort();
-    this.cloudfrontRegistry[bucketName] = false;
+    this.cloudfrontRegistry[keyId] = false;
     return accessors;
   }
 
   /**
    * The Lambda Function that will be called to assume a role cross-account and
-   * manage the S3 Bucket
+   * manage the KMS Key
    */
   public readonly function: Function;
 
   constructor(
     scope: Construct,
     id: string,
-    props: CrossAccountS3BucketManagerProps,
+    props: CrossAccountKmsKeyManagerProps,
   ) {
     super(scope, id);
 
     const {
-      bucketName,
-      bucketAwsId,
+      keyId,
+      keyAwsId,
       managerTimeout = 30, // default timeout of 3 seconds is awful short/fragile
       callerTimeout = 30, // default timeout of 3 seconds is awful short/fragile
     } = props;
 
-    const xaMgmtRoleArn = `arn:aws:iam::${bucketAwsId}:role/${bucketName}-xa-mgmt`;
+    const xaMgmtRoleArn = `arn:aws:iam::${keyAwsId}:role/${keyId}-xa-mgmt`;
     const assumeXaMgmtRole = new PolicyDocument({
       statements: [
         new PolicyStatement({
@@ -96,11 +94,11 @@ export class CrossAccountS3BucketManager extends Construct {
 
     const role = new Role(this, "xa-mgmt-lambda-role", {
       assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
-      description: `Execution role for ${bucketName} manager Lambda function.`,
+      description: `Execution role for ${keyId} manager Lambda function.`,
       inlinePolicies: {
         assumeXaMgmtRole,
       },
-      roleName: `${bucketName}-xa-mgmt-ex`,
+      roleName: `${keyId}-xa-mgmt-ex`,
     });
 
     this.function = new Function(this, "xa-mgmt-lambda", {
@@ -110,7 +108,7 @@ export class CrossAccountS3BucketManager extends Construct {
       timeout: Duration.seconds(managerTimeout),
       environment: {
         XA_MGMT_ROLE_ARN: xaMgmtRoleArn,
-        BUCKET_NAME: bucketName,
+        KEY_ID: keyId,
         ACCESSOR_ACCOUNT_ID: Stack.of(this).account,
         ACCESSOR_STACK_NAME: Stack.of(this).stackName,
       },
@@ -118,11 +116,11 @@ export class CrossAccountS3BucketManager extends Construct {
     });
 
     const cloudfrontDistributionIds =
-      CrossAccountS3BucketManager.consumeCloudfrontAccessors(bucketName);
+      CrossAccountKmsKeyManager.consumeCloudfrontAccessors(keyId);
     const cloudfrontAccessors: { [key: string]: string[] } = {};
     for (const id in cloudfrontDistributionIds) {
       const actions =
-        CrossAccountS3BucketManager.cloudfrontPermissionsRegistry[id];
+        CrossAccountKmsKeyManager.cloudfrontPermissionsRegistry[id];
       if (actions) {
         cloudfrontAccessors[id] = [...actions].sort();
       }
@@ -156,23 +154,34 @@ export class CrossAccountS3BucketManager extends Construct {
   }
 
   /**
-   * Grant access to the given cross-account S3 bucket to the specified Cloudfront
+   * Grant access to the given cross-account KMS key to the specified Cloudfront
    * Distribution ID
-   * Optionally specify a list of actions (default: ["s3:GetObject"])
+   * Optionally specify a list of actions
+   * (default: [
+   *  "kms:Decrypt",
+   *  "kms:Encrypt",
+   *  "kms:GenerateDataKey*",
+   *  "kms:DescribeKey"
+   * ])
    */
   public static allowCloudfront(
-    bucketName: string,
+    keyId: string,
     cloudfrontId: string,
     actions?: string[],
   ) {
-    if (this.cloudfrontRegistry[bucketName] === false) {
+    if (this.cloudfrontRegistry[keyId] === false) {
       throw new Error(
-        `Cannot register resources for bucket ${bucketName} manager after creation.`,
+        `Cannot register resources for key ${keyId} manager after creation.`,
       );
     }
-    actions ??= ["s3:GetObject"];
-    this.cloudfrontRegistry[bucketName] ??= new Set<string>();
-    this.cloudfrontRegistry[bucketName].add(cloudfrontId);
+    actions ??= [
+      "kms:Decrypt",
+      "kms:Encrypt",
+      "kms:GenerateDataKey*",
+      "kms:DescribeKey",
+    ];
+    this.cloudfrontRegistry[keyId] ??= new Set<string>();
+    this.cloudfrontRegistry[keyId].add(cloudfrontId);
     this.cloudfrontPermissionsRegistry[cloudfrontId] = new Set(actions);
   }
 }
