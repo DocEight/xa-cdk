@@ -2,17 +2,13 @@ import { Construct } from "constructs";
 import { CfnOutput } from "aws-cdk-lib";
 import { Key, KeyProps } from "aws-cdk-lib/aws-kms";
 import {
-  AccountRootPrincipal,
-  ArnPrincipal,
-  Effect,
-  PolicyDocument,
-  PolicyStatement,
-  Role,
-} from "aws-cdk-lib/aws-iam";
+  CrossAccountConstruct,
+  CrossAccountConstructProps,
+} from "../cross-account";
 
-export interface CrossAccountKmsKeyProps extends KeyProps {
-  xaAwsIds: string[];
-}
+export interface CrossAccountKmsKeyProps
+  extends KeyProps,
+    CrossAccountConstructProps {}
 
 /**
  * CrossAccountKmsKey creates a KMS key with a corresponding IAM role
@@ -24,57 +20,24 @@ export interface CrossAccountKmsKeyProps extends KeyProps {
  * - The IAM role created is scoped to `kms:GetKeyPolicy` and `kms:PutKeyPolicy`
  *   on this specific key only.
  */
-export class CrossAccountKmsKey extends Construct {
+export class CrossAccountKmsKey extends CrossAccountConstruct {
   /** The managed KMS key */
   public readonly key: Key;
 
-  /** The IAM role used for cross-account policy management */
-  public readonly role: Role;
-
   constructor(scope: Construct, id: string, props: CrossAccountKmsKeyProps) {
-    super(scope, id);
-
     const { xaAwsIds, ...keyProps } = props;
+    super(scope, id, { xaAwsIds });
 
     this.key = new Key(this, "xa-key", keyProps);
 
-    this.role = new Role(this, "xa-mgmt-role", {
-      assumedBy: new AccountRootPrincipal(), // placeholder
-      description: `IAM role to enable cross-account management of policy for ${this.key.keyId}`,
-      roleName: `${this.key.keyId}-xa-mgmt`,
-      inlinePolicies: {
-        UpdateKeyPolicy: new PolicyDocument({
-          statements: [
-            new PolicyStatement({
-              effect: Effect.ALLOW,
-              actions: ["kms:GetKeyPolicy", "kms:PutKeyPolicy"],
-              resources: [this.key.keyArn],
-            }),
-          ],
-        }),
-      },
-    });
-
-    const roleName = `${this.key.keyId}-xa-mgmt-ex`;
-    this.role.assumeRolePolicy?.addStatements(
-      new PolicyStatement({
-        effect: Effect.ALLOW,
-        principals: xaAwsIds.map(
-          (id) => new ArnPrincipal(`arn:aws:iam::${id}:role/${roleName}`),
-        ),
-        actions: ["sts:AssumeRole"],
-      }),
-    );
+    this.createManagementRole(this.key.keyId, this.key.keyArn, [
+      "kms:GetKeyPolicy",
+      "kms:PutKeyPolicy",
+    ]);
 
     new CfnOutput(this, "key-id", {
       value: this.key.keyId,
       description: "ID of the cross-account managed KMS key",
-    });
-
-    new CfnOutput(this, "xa-mgmt-role-arn", {
-      value: this.role.roleArn,
-      description:
-        "ARN of the IAM role used for cross-account key policy management",
     });
   }
 }
