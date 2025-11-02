@@ -1,4 +1,4 @@
-import { Duration } from "aws-cdk-lib";
+import { Duration, Stack } from "aws-cdk-lib";
 import {
   Effect,
   PolicyDocument,
@@ -16,7 +16,7 @@ import { Construct } from "constructs";
 import path from "path";
 
 interface Registry {
-  [bucketName: string]: Set<string> | false;
+  [key: string]: Set<string> | false;
 }
 
 export interface CrossAccountS3BucketManagerProps {
@@ -46,6 +46,8 @@ export interface CrossAccountS3BucketManagerProps {
 export class CrossAccountS3BucketManager extends Construct {
   /** Static registry mapping bucketNames to CloudFront Distribution IDs that need access */
   private static cloudfrontRegistry: Registry = {};
+  /** Static registry mapping to CloudFront Distribution IDs to S3 permissions */
+  private static cloudfrontPermissionsRegistry: Registry = {};
 
   /**
    * Returns a sorted list of the set of Cloudfront Distribution IDs in the registry and
@@ -81,12 +83,13 @@ export class CrossAccountS3BucketManager extends Construct {
       callerTimeout = 30, // default timeout of 3 seconds is awful short/fragile
     } = props;
 
+    const xaMgmtRoleArn = `arn:aws:iam::${bucketAwsId}:role/${bucketName}-xa-mgmt`;
     const assumeXaMgmtRole = new PolicyDocument({
       statements: [
         new PolicyStatement({
           effect: Effect.ALLOW,
           actions: ["sts:AssumeRole"],
-          resources: [`arn:aws:iam::${bucketAwsId}:role/${bucketName}-xa-mgmt`],
+          resources: [xaMgmtRoleArn],
         }),
       ],
     });
@@ -95,7 +98,7 @@ export class CrossAccountS3BucketManager extends Construct {
       assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
       description: `Execution role for ${bucketName} Lambda function.`,
       inlinePolicies: {
-        AssumeXaMgmtRole: assumeXaMgmtRole,
+        assumeXaMgmtRole,
       },
       roleName: `${bucketName}-xa-mgmt-ex`,
     });
@@ -105,11 +108,25 @@ export class CrossAccountS3BucketManager extends Construct {
       handler: "main.handler",
       runtime: Runtime.PYTHON_3_13,
       timeout: Duration.seconds(managerTimeout),
+      environment: {
+        XA_MGMT_ROLE_ARN: xaMgmtRoleArn,
+        BUCKET_NAME: bucketName,
+        ACCESSOR_ACCOUNT_ID: Stack.of(this).account,
+        ACCESSOR_STACK_NAME: Stack.of(this).stackName,
+      },
       role,
     });
 
     const cloudfrontDistributionIds =
       CrossAccountS3BucketManager.consumeCloudfrontAccessors(bucketName);
+    const cloudfrontAccessors: { [key: string]: string[] } = {};
+    for (const id in cloudfrontDistributionIds) {
+      const actions =
+        CrossAccountS3BucketManager.cloudfrontPermissionsRegistry[id];
+      if (actions) {
+        cloudfrontAccessors[id] = [...actions].sort();
+      }
+    }
 
     const callFor = (operation: string) => {
       return {
@@ -121,7 +138,7 @@ export class CrossAccountS3BucketManager extends Construct {
           InvocationType: "Event",
           Payload: JSON.stringify({
             operation,
-            cloudfrontDistributionIds,
+            cloudfrontAccessors,
           }),
         },
       };
@@ -138,13 +155,24 @@ export class CrossAccountS3BucketManager extends Construct {
     });
   }
 
-  public static allowCloudfront(bucketName: string, cloudfrontId: string) {
+  /**
+   * Grant access to the given cross-account S3 bucket to the specified Cloudfront
+   * Distribution ID
+   * Optionally specify a list of actions (default: ["s3:GetObject"])
+   */
+  public static allowCloudfront(
+    bucketName: string,
+    cloudfrontId: string,
+    actions?: string[],
+  ) {
     if (this.cloudfrontRegistry[bucketName] === false) {
       throw new Error(
         `Cannot register resources for bucket ${bucketName} manager after creation.`,
       );
     }
+    actions ??= ["s3:GetObject"];
     this.cloudfrontRegistry[bucketName] ??= new Set<string>();
     this.cloudfrontRegistry[bucketName].add(cloudfrontId);
+    this.cloudfrontPermissionsRegistry[cloudfrontId] = new Set(actions);
   }
 }
