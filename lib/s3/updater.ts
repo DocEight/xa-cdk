@@ -120,7 +120,7 @@ export class CrossAccountS3BucketManager extends Construct {
     const cloudfrontDistributionIds =
       CrossAccountS3BucketManager.consumeCloudfrontAccessors(bucketName);
     const cloudfrontAccessors: { [key: string]: string[] } = {};
-    for (const id in cloudfrontDistributionIds) {
+    for (const id of cloudfrontDistributionIds) {
       const actions =
         CrossAccountS3BucketManager.cloudfrontPermissionsRegistry[id];
       if (actions) {

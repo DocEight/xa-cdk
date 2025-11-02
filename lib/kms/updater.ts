@@ -118,7 +118,7 @@ export class CrossAccountKmsKeyManager extends Construct {
     const cloudfrontDistributionIds =
       CrossAccountKmsKeyManager.consumeCloudfrontAccessors(keyId);
     const cloudfrontAccessors: { [key: string]: string[] } = {};
-    for (const id in cloudfrontDistributionIds) {
+    for (const id of cloudfrontDistributionIds) {
       const actions =
         CrossAccountKmsKeyManager.cloudfrontPermissionsRegistry[id];
       if (actions) {

@@ -25,9 +25,7 @@ const getEventMatcher = (operation: string, distributionIds: string[]) =>
       "",
       Match.arrayWith([
         Match.stringLikeRegexp(
-          [operation, "cloudfrontDistributionIds", ...distributionIds].join(
-            "(.+)",
-          ),
+          [operation, "cloudfrontAccessors", ...distributionIds].join("(.+)"),
         ),
       ]),
     ]),
