@@ -1,5 +1,5 @@
 export { CrossAccountKmsKey } from "./key";
 export type { CrossAccountKmsKeyProps } from "./key";
 
-export { CrossAccountKmsKeyManager } from "./updater";
-export type { CrossAccountKmsKeyManagerProps } from "./updater";
+export { CrossAccountKmsKeyManager } from "./manager";
+export type { CrossAccountKmsKeyManagerProps } from "./manager";

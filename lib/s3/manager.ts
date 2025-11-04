@@ -14,9 +14,9 @@ export interface CrossAccountS3BucketManagerProps {
  * time using an AwsCustomResource (Lambda:InvokeFunction).
  *
  * @remarks
- * - `bucketName` should be the name of the S3 bucket in the other account whose
+ * - `xaBucketName` should be the name of the S3 bucket in the other account whose
  *   policy we want to manage.
- * - `bucketAwsId` should be the ID of the AWS account the aforementioned bucket
+ * - `xaAwsId` should be the ID of the AWS account the aforementioned bucket
  *   belongs to.
  * - `managerTimeout` is optional and specifies the number of seconds for the manager
  *   Lambda Function's timeout (defaults to 30).
