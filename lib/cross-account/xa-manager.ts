@@ -28,6 +28,7 @@ export interface CrossAccountManagerProps {
   xaAwsId: string;
   managerTimeout?: number;
   callerTimeout?: number;
+  subclassDir: string;
 }
 
 export abstract class CrossAccountManager extends Construct {
@@ -69,6 +70,7 @@ export abstract class CrossAccountManager extends Construct {
       xaAwsId,
       managerTimeout = 30, // default timeout of 3 seconds is awful short/fragile
       callerTimeout = 30, // default timeout of 3 seconds is awful short/fragile
+      subclassDir,
     } = props;
 
     const xaMgmtRoleArn = `arn:aws:iam::${xaAwsId}:role/${resourceIdentifier}-xa-mgmt`;
@@ -94,7 +96,7 @@ export abstract class CrossAccountManager extends Construct {
 
     // Manager Lambda
     this.mgrFunction = new LambdaFunction(this, "xa-mgmt-lambda", {
-      code: Code.fromAsset(path.join(__dirname, "lambda-code")),
+      code: Code.fromAsset(subclassDir),
       handler: "main.handler",
       runtime: Runtime.PYTHON_3_13,
       timeout: Duration.seconds(managerTimeout),
@@ -154,15 +156,15 @@ export abstract class CrossAccountManager extends Construct {
   protected static registerCloudfrontAccessor(
     stack: Stack,
     caller: Function,
+    distributionId: string,
     resourceIdentifier: string,
-    cloudfrontId: string,
     actions: string[],
   ) {
     addCloudfrontAccessor(
       stack,
       caller,
+      distributionId,
       resourceIdentifier,
-      cloudfrontId,
       actions,
     );
   }

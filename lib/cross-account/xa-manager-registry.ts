@@ -57,7 +57,7 @@ export const consumeCloudfrontAccessors = (
     consumed: true,
   });
   return ensureRegistry(cloudfrontRegistries, stack, manager).filter(
-    (r) => r.targetIdentifier,
+    (r) => r.targetIdentifier == targetIdentifier,
   );
 };
 
@@ -71,16 +71,18 @@ export const addCloudfrontAccessor = (
 ) => {
   if (isConsumed(stack, manager, targetIdentifier))
     throw new Error(
-      `Cannot register resources for ${targetIdentifier} manager after creation` +
+      `Cannot register resources for ${targetIdentifier} manager after creation ` +
         `(registering ${distributionId}).`,
     );
   if (
     ensureRegistry(cloudfrontRegistries, stack, manager).find(
-      (r) => r.accessorIdentifier == distributionId,
+      (r) =>
+        r.targetIdentifier == targetIdentifier &&
+        r.accessorIdentifier == distributionId,
     )
   )
     throw new Error(
-      `Distribution ${distributionId} has already been registered for` +
+      `Distribution ${distributionId} has already been registered for ` +
         `${targetIdentifier} manager.`,
     );
   ensureRegistry(cloudfrontRegistries, stack, manager).push({

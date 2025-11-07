@@ -1,6 +1,7 @@
 import { Stack } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { CrossAccountManager } from "../cross-account";
+import path from "path";
 
 export interface CrossAccountS3BucketManagerProps {
   xaBucketName: string;
@@ -38,6 +39,7 @@ export class CrossAccountS3BucketManager extends CrossAccountManager {
       xaAwsId,
       managerTimeout,
       callerTimeout,
+      subclassDir: path.join(__dirname, "lambda-code"),
     });
   }
 
@@ -48,8 +50,8 @@ export class CrossAccountS3BucketManager extends CrossAccountManager {
    */
   public static allowCloudfront(
     context: Construct,
-    bucketName: string,
     cloudfrontId: string,
+    bucketName: string,
     actions?: string[],
   ) {
     const stack = Stack.of(context);
@@ -58,8 +60,8 @@ export class CrossAccountS3BucketManager extends CrossAccountManager {
     super.registerCloudfrontAccessor(
       stack,
       caller,
-      bucketName,
       cloudfrontId,
+      bucketName,
       actions,
     );
   }

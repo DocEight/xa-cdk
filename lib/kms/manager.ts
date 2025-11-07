@@ -1,24 +1,7 @@
-import { Duration, Stack } from "aws-cdk-lib";
-import {
-  Effect,
-  PolicyDocument,
-  PolicyStatement,
-  Role,
-  ServicePrincipal,
-} from "aws-cdk-lib/aws-iam";
-import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
-import {
-  AwsCustomResource,
-  AwsCustomResourcePolicy,
-  PhysicalResourceId,
-} from "aws-cdk-lib/custom-resources";
+import { Stack } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import path from "path";
 import { CrossAccountManager } from "../cross-account";
-
-interface Registry {
-  [key: string]: Set<string> | false;
-}
 
 export interface CrossAccountKmsKeyManagerProps {
   xaKeyId: string;
@@ -61,6 +44,7 @@ export class CrossAccountKmsKeyManager extends CrossAccountManager {
       xaAwsId,
       managerTimeout,
       callerTimeout,
+      subclassDir: path.join(__dirname, "lambda-code"),
     });
   }
 
