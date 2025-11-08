@@ -19,17 +19,32 @@ const getPoliciesMatcher = (bucketName: string, bucketAwsId: string) =>
     }),
   ]);
 
-const getEventMatcher = (operation: string, distributionIds: string[]) =>
-  Match.objectEquals({
+const getEventMatcher = (
+  operation: string,
+  managerId: string,
+  distributionIds: string[],
+  actions?: string[],
+) => {
+  actions ??= ["s3:GetObject"];
+  const functionPattern = managerId.replaceAll("-", "").replaceAll("_", "");
+  return Match.objectEquals({
     "Fn::Join": Match.arrayEquals([
       "",
       Match.arrayWith([
+        Match.stringLikeRegexp(".+"),
+        Match.objectEquals({ Ref: Match.stringLikeRegexp(functionPattern) }),
         Match.stringLikeRegexp(
-          [operation, "cloudfrontAccessors", ...distributionIds].join("(.+)"),
+          [
+            operation,
+            "cloudfrontAccessors",
+            ...distributionIds,
+            ...actions,
+          ].join("(.+)"),
         ),
       ]),
     ]),
   });
+};
 
 test("Single XAS3 Manager", () => {
   const app = new App();
@@ -85,9 +100,9 @@ test("XAS3 Manager single accessor", () => {
     Policies: getPoliciesMatcher(xaBucketName, xaAwsId),
   });
   template.hasResourceProperties("Custom::AWS", {
-    Create: getEventMatcher("create", distributionIds),
-    Update: getEventMatcher("update", distributionIds),
-    Delete: getEventMatcher("delete", distributionIds),
+    Create: getEventMatcher("create", managerId, distributionIds),
+    Update: getEventMatcher("update", managerId, distributionIds),
+    Delete: getEventMatcher("delete", managerId, distributionIds),
   });
 });
 
@@ -127,9 +142,9 @@ test("XAS3 Manager multiple accessors", () => {
     Policies: getPoliciesMatcher(xaBucketName, xaAwsId),
   });
   template.hasResourceProperties("Custom::AWS", {
-    Create: getEventMatcher("create", distributionIds),
-    Update: getEventMatcher("update", distributionIds),
-    Delete: getEventMatcher("delete", distributionIds),
+    Create: getEventMatcher("create", managerId, distributionIds),
+    Update: getEventMatcher("update", managerId, distributionIds),
+    Delete: getEventMatcher("delete", managerId, distributionIds),
   });
 });
 
@@ -166,6 +181,7 @@ test("Multiple XAS3 Managers", () => {
     "YET_ANOTHER_ID",
     "SO_MANY_IDS",
   ].sort();
+  const actions2 = ["s3:GetObject", "s3:PutObject"];
 
   // WHEN
   CrossAccountS3BucketManager.allowCloudfront(
@@ -178,6 +194,7 @@ test("Multiple XAS3 Managers", () => {
       stack,
       distributionId,
       xaBucketName2,
+      ["s3:GetObject", "s3:PutObject"],
     );
   }
   new CrossAccountS3BucketManager(stack, managerId1, {
@@ -199,9 +216,9 @@ test("Multiple XAS3 Managers", () => {
     Policies: getPoliciesMatcher(xaBucketName1, xaAwsId1),
   });
   template.hasResourceProperties("Custom::AWS", {
-    Create: getEventMatcher("create", distributionIds1),
-    Update: getEventMatcher("update", distributionIds1),
-    Delete: getEventMatcher("delete", distributionIds1),
+    Create: getEventMatcher("create", managerId1, distributionIds1),
+    Update: getEventMatcher("update", managerId1, distributionIds1),
+    Delete: getEventMatcher("delete", managerId1, distributionIds1),
   });
 
   template.hasResourceProperties("AWS::IAM::Role", {
@@ -209,8 +226,8 @@ test("Multiple XAS3 Managers", () => {
     Policies: getPoliciesMatcher(xaBucketName2, xaAwsId2),
   });
   template.hasResourceProperties("Custom::AWS", {
-    Create: getEventMatcher("create", distributionIds2),
-    Update: getEventMatcher("update", distributionIds2),
-    Delete: getEventMatcher("delete", distributionIds2),
+    Create: getEventMatcher("create", managerId2, distributionIds2, actions2),
+    Update: getEventMatcher("update", managerId2, distributionIds2, actions2),
+    Delete: getEventMatcher("delete", managerId2, distributionIds2, actions2),
   });
 });
