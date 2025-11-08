@@ -36,14 +36,14 @@ export class CrossAccountS3Bucket extends CrossAccountConstruct {
       );
     }
 
-    this.bucket = new Bucket(this, "xa-bucket", bucketProps);
+    this.bucket = new Bucket(this, "xaBucket", bucketProps);
 
     this.createManagementRole(this.bucket.bucketName, this.bucket.bucketArn, [
       "s3:GetBucketPolicy",
       "s3:PutBucketPolicy",
     ]);
 
-    new CfnOutput(this, "bucket-name", {
+    new CfnOutput(this, "xaBucketName", {
       value: this.bucket.bucketName,
       description: "Name of the cross-account managed S3 bucket",
     });

@@ -76,7 +76,7 @@ export abstract class CrossAccountManager extends Construct {
     });
 
     // Manager Lambda execution role
-    const role = new iam.Role(this, "xa-mgmt-lambda-role", {
+    const role = new iam.Role(this, "xamgmtLambdaRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
       description: `Execution role for ${resourceIdentifier} manager Lambda function.`,
       inlinePolicies: {
@@ -86,7 +86,7 @@ export abstract class CrossAccountManager extends Construct {
     });
 
     // Manager Lambda
-    this.mgrFunction = new lambda.Function(this, "xa-mgmt-lambda", {
+    this.mgrFunction = new lambda.Function(this, "xamgmtLambda", {
       code: lambda.Code.fromAsset(subclassDir),
       handler: "main.handler",
       runtime: lambda.Runtime.PYTHON_3_13,
@@ -113,7 +113,7 @@ export abstract class CrossAccountManager extends Construct {
     // Util factory to get an AwsSdkCall for the AwsCustomResource
     const callFor = (operation: string) => {
       return {
-        physicalResourceId: PhysicalResourceId.of("xa-mgmt-lambda-caller"),
+        physicalResourceId: PhysicalResourceId.of("xamgmtLambdaCaller"),
         service: "Lambda",
         action: "InvokeFunction",
         parameters: {
@@ -127,7 +127,7 @@ export abstract class CrossAccountManager extends Construct {
       };
     };
 
-    new AwsCustomResource(this, "xa-mgmt-lambda-caller", {
+    new AwsCustomResource(this, "xamgmtLambdaCaller", {
       onCreate: callFor("create"),
       onUpdate: callFor("update"),
       onDelete: callFor("delete"),
