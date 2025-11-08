@@ -1,6 +1,6 @@
 import { App, Stack } from "aws-cdk-lib/core";
 import { Template } from "aws-cdk-lib/assertions";
-import { CrossAccountS3BucketManager } from "../lib";
+import { CrossAccountS3BucketManager } from "../lib/s3";
 
 import { getPoliciesMatcher, getEventMatcher } from "./matchers";
 import { PYTHON_RUNTIME, S3_DEFAULT_ACTIONS } from "./const";

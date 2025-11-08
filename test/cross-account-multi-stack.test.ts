@@ -3,12 +3,8 @@ import { Template } from "aws-cdk-lib/assertions";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import * as s3 from "aws-cdk-lib/aws-s3";
-import {
-  CrossAccountKmsKey,
-  CrossAccountKmsKeyManager,
-  CrossAccountS3Bucket,
-  CrossAccountS3BucketManager,
-} from "../lib";
+import { CrossAccountKmsKey, CrossAccountKmsKeyManager } from "../lib/kms";
+import { CrossAccountS3Bucket, CrossAccountS3BucketManager } from "../lib/s3";
 
 import {
   getPoliciesMatcher,

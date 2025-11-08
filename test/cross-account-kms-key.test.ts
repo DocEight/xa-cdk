@@ -1,7 +1,7 @@
 import { App, Stack } from "aws-cdk-lib/core";
 import { Template } from "aws-cdk-lib/assertions";
 
-import { CrossAccountKmsKey } from "../lib";
+import { CrossAccountKmsKey } from "../lib/kms";
 import { getAssumeRolePolicyMatcher, getRoleNameMatcher } from "./matchers";
 
 test("Single Accessor XAKMS", () => {

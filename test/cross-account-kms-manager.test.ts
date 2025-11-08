@@ -1,6 +1,6 @@
 import { App, Stack } from "aws-cdk-lib/core";
 import { Template } from "aws-cdk-lib/assertions";
-import { CrossAccountKmsKeyManager } from "../lib";
+import { CrossAccountKmsKeyManager } from "../lib/kms";
 
 import { getPoliciesMatcher, getEventMatcher } from "./matchers";
 import { PYTHON_RUNTIME, KMS_DEFAULT_ACTIONS } from "./const";

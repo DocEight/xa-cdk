@@ -1,7 +1,7 @@
 import { App, Stack } from "aws-cdk-lib/core";
 import { Template } from "aws-cdk-lib/assertions";
 
-import { CrossAccountS3Bucket } from "../lib";
+import { CrossAccountS3Bucket } from "../lib/s3";
 import { getAssumeRolePolicyMatcher, getRoleNameMatcher } from "./matchers";
 
 test("Single Accessor XAS3", () => {
