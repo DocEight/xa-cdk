@@ -47,3 +47,44 @@ export const getAssumeRolePolicyMatcher = (
     ]),
     Version: "2012-10-17",
   });
+
+export const getPoliciesMatcher = (resourceName: string, awsId: string) =>
+  Match.arrayWith([
+    Match.objectLike({
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectEquals({
+            Action: "sts:AssumeRole",
+            Effect: "Allow",
+            Resource: `arn:aws:iam::${awsId}:role/${resourceName}-xa-mgmt`,
+          }),
+        ]),
+      }),
+    }),
+  ]);
+
+export const getEventMatcher = (
+  operation: string,
+  managerId: string,
+  distributionIds: string[],
+  actions: string[],
+) => {
+  const functionPattern = managerId.replaceAll("-", "").replaceAll("_", "");
+  return Match.objectEquals({
+    "Fn::Join": Match.arrayEquals([
+      "",
+      Match.arrayWith([
+        Match.stringLikeRegexp(".+"),
+        Match.objectEquals({ Ref: Match.stringLikeRegexp(functionPattern) }),
+        Match.stringLikeRegexp(
+          [
+            operation,
+            "cloudfrontAccessors",
+            ...distributionIds,
+            ...actions,
+          ].join("(.+)"),
+        ),
+      ]),
+    ]),
+  });
+};

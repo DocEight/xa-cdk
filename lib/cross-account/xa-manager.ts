@@ -1,23 +1,13 @@
 import { Duration, Stack } from "aws-cdk-lib";
-import {
-  Effect,
-  PolicyDocument,
-  PolicyStatement,
-  Role,
-  ServicePrincipal,
-} from "aws-cdk-lib/aws-iam";
-import {
-  Code,
-  Function as LambdaFunction,
-  Runtime,
-} from "aws-cdk-lib/aws-lambda";
+import { Construct } from "constructs";
+import * as iam from "aws-cdk-lib/aws-iam";
+import * as lambda from "aws-cdk-lib/aws-lambda";
 import {
   AwsCustomResource,
   AwsCustomResourcePolicy,
   PhysicalResourceId,
 } from "aws-cdk-lib/custom-resources";
-import { Construct } from "constructs";
-import path from "path";
+
 import {
   addCloudfrontAccessor,
   consumeCloudfrontAccessors,
@@ -36,8 +26,8 @@ export abstract class CrossAccountManager extends Construct {
    * The Lambda Function that will be called to assume a role cross-account and
    * manage the resource
    */
-  private mgrFunction: LambdaFunction;
-  public get function(): LambdaFunction {
+  private mgrFunction: lambda.Function;
+  public get function(): lambda.Function {
     return this.mgrFunction;
   }
 
@@ -74,10 +64,10 @@ export abstract class CrossAccountManager extends Construct {
     } = props;
 
     const xaMgmtRoleArn = `arn:aws:iam::${xaAwsId}:role/${resourceIdentifier}-xa-mgmt`;
-    const assumeXaMgmtRolePolicy = new PolicyDocument({
+    const assumeXaMgmtRolePolicy = new iam.PolicyDocument({
       statements: [
-        new PolicyStatement({
-          effect: Effect.ALLOW,
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
           actions: ["sts:AssumeRole"],
           resources: [xaMgmtRoleArn],
         }),
@@ -85,8 +75,8 @@ export abstract class CrossAccountManager extends Construct {
     });
 
     // Manager Lambda execution role
-    const role = new Role(this, "xa-mgmt-lambda-role", {
-      assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
+    const role = new iam.Role(this, "xa-mgmt-lambda-role", {
+      assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
       description: `Execution role for ${resourceIdentifier} manager Lambda function.`,
       inlinePolicies: {
         assumeXaMgmtRolePolicy,
@@ -95,10 +85,10 @@ export abstract class CrossAccountManager extends Construct {
     });
 
     // Manager Lambda
-    this.mgrFunction = new LambdaFunction(this, "xa-mgmt-lambda", {
-      code: Code.fromAsset(subclassDir),
+    this.mgrFunction = new lambda.Function(this, "xa-mgmt-lambda", {
+      code: lambda.Code.fromAsset(subclassDir),
       handler: "main.handler",
-      runtime: Runtime.PYTHON_3_13,
+      runtime: lambda.Runtime.PYTHON_3_13,
       timeout: Duration.seconds(managerTimeout),
       environment: {
         XA_MGMT_ROLE_ARN: xaMgmtRoleArn,

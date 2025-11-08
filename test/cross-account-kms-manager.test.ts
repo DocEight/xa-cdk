@@ -1,20 +1,20 @@
 import { App, Stack } from "aws-cdk-lib/core";
 import { Template } from "aws-cdk-lib/assertions";
-import { CrossAccountS3BucketManager } from "../lib";
+import { CrossAccountKmsKeyManager } from "../lib";
 
 import { getPoliciesMatcher, getEventMatcher } from "./matchers";
-import { PYTHON_RUNTIME, S3_DEFAULT_ACTIONS } from "./const";
+import { PYTHON_RUNTIME, KMS_DEFAULT_ACTIONS } from "./const";
 
-test("Single XAS3 Manager", () => {
+test("Single XAKMS Manager", () => {
   const app = new App();
   const stack = new Stack(app, "test-stack");
-  const managerId = "test-xas3-mgr";
-  const xaBucketName = "test-xas3";
+  const managerId = "test-xakms-mgr";
+  const xaKeyId = "test-xakms";
   const xaAwsId = "098765432109";
 
   // WHEN
-  new CrossAccountS3BucketManager(stack, managerId, {
-    xaBucketName,
+  new CrossAccountKmsKeyManager(stack, managerId, {
+    xaKeyId,
     xaAwsId,
   });
   // THEN
@@ -24,28 +24,24 @@ test("Single XAS3 Manager", () => {
     Runtime: PYTHON_RUNTIME,
   });
   template.hasResourceProperties("AWS::IAM::Role", {
-    RoleName: `${xaBucketName}-xa-mgmt-ex`,
-    Policies: getPoliciesMatcher(xaBucketName, xaAwsId),
+    RoleName: `${xaKeyId}-xa-mgmt-ex`,
+    Policies: getPoliciesMatcher(xaKeyId, xaAwsId),
   });
   template.hasResourceProperties("Custom::AWS", {});
 });
 
-test("XAS3 Manager single accessor", () => {
+test("XAKMS Manager single accessor", () => {
   const app = new App();
   const stack = new Stack(app, "test-stack");
-  const managerId = "test-xas3-mgr";
-  const xaBucketName = "test-xas3-s";
+  const managerId = "test-xakms-mgr";
+  const xaKeyId = "test-xakms";
   const xaAwsId = "098765432109";
   const distributionIds = ["SOME_ID"];
 
   // WHEN
-  CrossAccountS3BucketManager.allowCloudfront(
-    stack,
-    distributionIds[0],
-    xaBucketName,
-  );
-  new CrossAccountS3BucketManager(stack, managerId, {
-    xaBucketName,
+  CrossAccountKmsKeyManager.allowCloudfront(stack, distributionIds[0], xaKeyId);
+  new CrossAccountKmsKeyManager(stack, managerId, {
+    xaKeyId,
     xaAwsId,
   });
   // THEN
@@ -55,36 +51,36 @@ test("XAS3 Manager single accessor", () => {
     Runtime: PYTHON_RUNTIME,
   });
   template.hasResourceProperties("AWS::IAM::Role", {
-    RoleName: `${xaBucketName}-xa-mgmt-ex`,
-    Policies: getPoliciesMatcher(xaBucketName, xaAwsId),
+    RoleName: `${xaKeyId}-xa-mgmt-ex`,
+    Policies: getPoliciesMatcher(xaKeyId, xaAwsId),
   });
   template.hasResourceProperties("Custom::AWS", {
     Create: getEventMatcher(
       "create",
       managerId,
       distributionIds,
-      S3_DEFAULT_ACTIONS,
+      KMS_DEFAULT_ACTIONS,
     ),
     Update: getEventMatcher(
       "update",
       managerId,
       distributionIds,
-      S3_DEFAULT_ACTIONS,
+      KMS_DEFAULT_ACTIONS,
     ),
     Delete: getEventMatcher(
       "delete",
       managerId,
       distributionIds,
-      S3_DEFAULT_ACTIONS,
+      KMS_DEFAULT_ACTIONS,
     ),
   });
 });
 
-test("XAS3 Manager multiple accessors", () => {
+test("XAKMS Manager multiple accessors", () => {
   const app = new App();
   const stack = new Stack(app, "test-stack");
-  const managerId = "test-xas3-mgr";
-  const xaBucketName = "test-xas3-m";
+  const managerId = "test-xakms-mgr";
+  const xaKeyId = "test-xakms";
   const xaAwsId = "098765432109";
   const distributionIds = [
     "SOME_ID",
@@ -95,14 +91,10 @@ test("XAS3 Manager multiple accessors", () => {
 
   // WHEN
   for (const distributionId of distributionIds) {
-    CrossAccountS3BucketManager.allowCloudfront(
-      stack,
-      distributionId,
-      xaBucketName,
-    );
+    CrossAccountKmsKeyManager.allowCloudfront(stack, distributionId, xaKeyId);
   }
-  new CrossAccountS3BucketManager(stack, managerId, {
-    xaBucketName,
+  new CrossAccountKmsKeyManager(stack, managerId, {
+    xaKeyId,
     xaAwsId,
   });
   // THEN
@@ -112,57 +104,57 @@ test("XAS3 Manager multiple accessors", () => {
     Runtime: PYTHON_RUNTIME,
   });
   template.hasResourceProperties("AWS::IAM::Role", {
-    RoleName: `${xaBucketName}-xa-mgmt-ex`,
-    Policies: getPoliciesMatcher(xaBucketName, xaAwsId),
+    RoleName: `${xaKeyId}-xa-mgmt-ex`,
+    Policies: getPoliciesMatcher(xaKeyId, xaAwsId),
   });
   template.hasResourceProperties("Custom::AWS", {
     Create: getEventMatcher(
       "create",
       managerId,
       distributionIds,
-      S3_DEFAULT_ACTIONS,
+      KMS_DEFAULT_ACTIONS,
     ),
     Update: getEventMatcher(
       "update",
       managerId,
       distributionIds,
-      S3_DEFAULT_ACTIONS,
+      KMS_DEFAULT_ACTIONS,
     ),
     Delete: getEventMatcher(
       "delete",
       managerId,
       distributionIds,
-      S3_DEFAULT_ACTIONS,
+      KMS_DEFAULT_ACTIONS,
     ),
   });
 });
 
-test("XAS3 Manager improper usage", () => {
+test("XAKMS Manager improper usage", () => {
   const app = new App();
   const stack = new Stack(app, "test-stack");
-  const managerId = "test-xas3-mgr";
-  const xaBucketName = "test-xas3-BAD";
+  const managerId = "test-xakms-mgr";
+  const xaKeyId = "test-xakms-BAD";
   const xaAwsId = "098765432109";
 
-  new CrossAccountS3BucketManager(stack, managerId, {
-    xaBucketName,
+  new CrossAccountKmsKeyManager(stack, managerId, {
+    xaKeyId,
     xaAwsId,
   });
 
   expect(() =>
-    CrossAccountS3BucketManager.allowCloudfront(stack, "bad :(", xaBucketName),
+    CrossAccountKmsKeyManager.allowCloudfront(stack, "bad :(", xaKeyId),
   ).toThrow(/Cannot register .+ after creation./);
 });
 
-test("Multiple XAS3 Managers", () => {
+test("Multiple XAKMS Managers", () => {
   const app = new App();
   const stack = new Stack(app, "test-stack");
-  const managerId1 = "test-xas3-mgr1";
-  const xaBucketName1 = "test-xas3-s1";
+  const managerId1 = "test-xakms-mgr1";
+  const xaKeyId1 = "test-xakms-s1";
   const xaAwsId1 = "123456789012";
   const distributionIds1 = ["SOME_ID"];
-  const managerId2 = "test-xas3-mgr2";
-  const xaBucketName2 = "test-xas3-m2";
+  const managerId2 = "test-xakms-mgr2";
+  const xaKeyId2 = "test-xakms-m2";
   const xaAwsId2 = "098765432109";
   const distributionIds2 = [
     "SOME_ID",
@@ -170,28 +162,28 @@ test("Multiple XAS3 Managers", () => {
     "YET_ANOTHER_ID",
     "SO_MANY_IDS",
   ].sort();
-  const actions2 = ["s3:GetObject", "s3:PutObject"];
+  const actions2 = ["kms:ListKeys", ...KMS_DEFAULT_ACTIONS];
 
   // WHEN
-  CrossAccountS3BucketManager.allowCloudfront(
+  CrossAccountKmsKeyManager.allowCloudfront(
     stack,
     distributionIds1[0],
-    xaBucketName1,
+    xaKeyId1,
   );
   for (const distributionId of distributionIds2) {
-    CrossAccountS3BucketManager.allowCloudfront(
+    CrossAccountKmsKeyManager.allowCloudfront(
       stack,
       distributionId,
-      xaBucketName2,
+      xaKeyId2,
       actions2,
     );
   }
-  new CrossAccountS3BucketManager(stack, managerId1, {
-    xaBucketName: xaBucketName1,
+  new CrossAccountKmsKeyManager(stack, managerId1, {
+    xaKeyId: xaKeyId1,
     xaAwsId: xaAwsId1,
   });
-  new CrossAccountS3BucketManager(stack, managerId2, {
-    xaBucketName: xaBucketName2,
+  new CrossAccountKmsKeyManager(stack, managerId2, {
+    xaKeyId: xaKeyId2,
     xaAwsId: xaAwsId2,
   });
   // THEN
@@ -201,33 +193,33 @@ test("Multiple XAS3 Managers", () => {
     Runtime: PYTHON_RUNTIME,
   });
   template.hasResourceProperties("AWS::IAM::Role", {
-    RoleName: `${xaBucketName1}-xa-mgmt-ex`,
-    Policies: getPoliciesMatcher(xaBucketName1, xaAwsId1),
+    RoleName: `${xaKeyId1}-xa-mgmt-ex`,
+    Policies: getPoliciesMatcher(xaKeyId1, xaAwsId1),
   });
   template.hasResourceProperties("Custom::AWS", {
     Create: getEventMatcher(
       "create",
       managerId1,
       distributionIds1,
-      S3_DEFAULT_ACTIONS,
+      KMS_DEFAULT_ACTIONS,
     ),
     Update: getEventMatcher(
       "update",
       managerId1,
       distributionIds1,
-      S3_DEFAULT_ACTIONS,
+      KMS_DEFAULT_ACTIONS,
     ),
     Delete: getEventMatcher(
       "delete",
       managerId1,
       distributionIds1,
-      S3_DEFAULT_ACTIONS,
+      KMS_DEFAULT_ACTIONS,
     ),
   });
 
   template.hasResourceProperties("AWS::IAM::Role", {
-    RoleName: `${xaBucketName2}-xa-mgmt-ex`,
-    Policies: getPoliciesMatcher(xaBucketName2, xaAwsId2),
+    RoleName: `${xaKeyId2}-xa-mgmt-ex`,
+    Policies: getPoliciesMatcher(xaKeyId2, xaAwsId2),
   });
   template.hasResourceProperties("Custom::AWS", {
     Create: getEventMatcher("create", managerId2, distributionIds2, actions2),
