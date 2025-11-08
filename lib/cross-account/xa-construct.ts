@@ -1,6 +1,7 @@
 import { Construct } from "constructs";
 import { CfnOutput } from "aws-cdk-lib";
 import {
+  AccountPrincipal,
   AccountRootPrincipal,
   ArnPrincipal,
   Effect,
@@ -74,11 +75,15 @@ export abstract class CrossAccountConstruct extends Construct {
     this.role.assumeRolePolicy?.addStatements(
       new PolicyStatement({
         effect: Effect.ALLOW,
-        principals: this.xaAwsIds.map(
-          (id) =>
-            new ArnPrincipal(`arn:aws:iam::${id}:role/${accessorRoleName}`),
-        ),
+        principals: this.xaAwsIds.map((id) => new AccountPrincipal(id)),
         actions: ["sts:AssumeRole"],
+        conditions: {
+          StringLike: {
+            "aws:PrincipalArn": this.xaAwsIds.map(
+              (id) => `arn:aws:iam::${id}:role/${accessorRoleName}`,
+            ),
+          },
+        },
       }),
     );
 

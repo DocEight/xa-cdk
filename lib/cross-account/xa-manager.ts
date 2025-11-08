@@ -76,7 +76,7 @@ export abstract class CrossAccountManager extends Construct {
     });
 
     // Manager Lambda execution role
-    const role = new iam.Role(this, "xamgmtLambdaRole", {
+    const role = new iam.Role(this, "XaMgmtLambdaRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
       description: `Execution role for ${resourceIdentifier} manager Lambda function.`,
       inlinePolicies: {
