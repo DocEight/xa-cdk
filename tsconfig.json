@@ -5,6 +5,7 @@
     "moduleResolution": "NodeNext",
     "isolatedModules": true,
     "lib": ["es2022"],
+    "outDir": "dist",
     "declaration": true,
     "strict": true,
     "noImplicitAny": true,
@@ -22,5 +23,5 @@
     "skipLibCheck": true,
     "typeRoots": ["./node_modules/@types"]
   },
-  "exclude": ["node_modules", "cdk.out"]
+  "include": ["lib", "index.ts"]
 }
