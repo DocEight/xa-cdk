@@ -53,7 +53,7 @@ export abstract class CrossAccountConstruct extends Construct {
     policyTarget: string,
     policyActions: string[],
   ) {
-    this.mgmtRole = new Role(this, "xa-mgmt-role", {
+    this.mgmtRole = new Role(this, "XaMgmtRole", {
       assumedBy: new AccountRootPrincipal(), // placeholder
       description: `IAM role to enable cross-account management of policy for ${resourceIdentifier}`,
       roleName: `${resourceIdentifier}-xa-mgmt`,
@@ -82,7 +82,7 @@ export abstract class CrossAccountConstruct extends Construct {
       }),
     );
 
-    new CfnOutput(this, "xa-mgmt-role-arn", {
+    new CfnOutput(this, "XaMgmtRoleArn", {
       value: this.role.roleArn,
       description:
         "ARN of the IAM role used for cross-account resource policy management",
