@@ -17,10 +17,15 @@ import {
   getAssumeRolePolicyMatcher,
 } from "./matchers";
 import {
+  KMS_DEFAULT_ACTIONS,
   PYTHON_RUNTIME,
   S3_DEFAULT_ACTIONS,
-  KMS_DEFAULT_ACTIONS,
 } from "./const";
+
+// NOTE: We can't dynamically test on a Cloudfront Distribution's distributionId here
+// due to how CDK tokenizes values generated at deployment time
+// In an actual deployment scenario these should resolve before being passed into our
+// manager Lambdas/custom resources
 
 test("Cloudfront to S3 (SSE:S3)", () => {
   const app = new App();
@@ -52,7 +57,7 @@ test("Cloudfront to S3 (SSE:S3)", () => {
   CrossAccountS3BucketManager.allowCloudfront({
     scope: distribution,
     bucketName: xaBucketName,
-    distributionId: distribution.distributionId,
+    distributionId: distributionId,
   });
   new CrossAccountS3BucketManager(accessorStack, managerId, {
     xaBucketName,
@@ -80,7 +85,26 @@ test("Cloudfront to S3 (SSE:S3)", () => {
     RoleName: `${xaBucketName}-xa-mgmt-ex`,
     Policies: getPoliciesMatcher(xaBucketName, accessedAwsId),
   });
-  accessorTemplate.hasResourceProperties("Custom::AWS", {});
+  accessorTemplate.hasResourceProperties("Custom::AWS", {
+    Create: getEventMatcher(
+      "create",
+      managerId,
+      [distributionId],
+      S3_DEFAULT_ACTIONS,
+    ),
+    Update: getEventMatcher(
+      "update",
+      managerId,
+      [distributionId],
+      S3_DEFAULT_ACTIONS,
+    ),
+    Delete: getEventMatcher(
+      "delete",
+      managerId,
+      [distributionId],
+      S3_DEFAULT_ACTIONS,
+    ),
+  });
 });
 
 test("Cloudfront to S3 (SSE:KMS)", () => {
@@ -121,12 +145,12 @@ test("Cloudfront to S3 (SSE:KMS)", () => {
   CrossAccountKmsKeyManager.allowCloudfront({
     scope: distribution,
     keyId: xaKeyId,
-    distributionId: distribution.distributionId,
+    distributionId: distributionId,
   });
   CrossAccountS3BucketManager.allowCloudfront({
     scope: distribution,
     bucketName: xaBucketName,
-    distributionId: distribution.distributionId,
+    distributionId: distributionId,
   });
   new CrossAccountKmsKeyManager(accessorStack, kmsManagerId, {
     xaKeyId,
@@ -169,9 +193,48 @@ test("Cloudfront to S3 (SSE:KMS)", () => {
     RoleName: `${xaBucketName}-xa-mgmt-ex`,
     Policies: getPoliciesMatcher(xaBucketName, accessedAwsId),
   });
+  accessorTemplate.hasResourceProperties("Custom::AWS", {
+    Create: getEventMatcher(
+      "create",
+      s3ManagerId,
+      [distributionId],
+      S3_DEFAULT_ACTIONS,
+    ),
+    Update: getEventMatcher(
+      "update",
+      s3ManagerId,
+      [distributionId],
+      S3_DEFAULT_ACTIONS,
+    ),
+    Delete: getEventMatcher(
+      "delete",
+      s3ManagerId,
+      [distributionId],
+      S3_DEFAULT_ACTIONS,
+    ),
+  });
   accessorTemplate.hasResourceProperties("AWS::IAM::Role", {
     RoleName: `${xaKeyId}-xa-mgmt-ex`,
     Policies: getPoliciesMatcher(xaKeyId, accessedAwsId),
   });
-  accessorTemplate.hasResourceProperties("Custom::AWS", {});
+  accessorTemplate.hasResourceProperties("Custom::AWS", {
+    Create: getEventMatcher(
+      "create",
+      kmsManagerId,
+      [distributionId],
+      KMS_DEFAULT_ACTIONS,
+    ),
+    Update: getEventMatcher(
+      "update",
+      kmsManagerId,
+      [distributionId],
+      KMS_DEFAULT_ACTIONS,
+    ),
+    Delete: getEventMatcher(
+      "delete",
+      kmsManagerId,
+      [distributionId],
+      KMS_DEFAULT_ACTIONS,
+    ),
+  });
 });
