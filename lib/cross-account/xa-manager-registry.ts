@@ -25,30 +25,37 @@ const ensureRegistry = <T>(
   return stackRegistry.get(manager)!;
 };
 
+interface RegistryManagementBaseProps {
+  stack: Stack;
+  manager: Function;
+  targetIdentifier: string;
+}
+
 // A map of Stack instance -> Function (manager Construct constuctor) -> cloudfrontAccessors array
 const cloudfrontRegistries = new WeakMap<Stack, Registry<Access>>();
 
 // A map of Stack instance -> Function (manager Construct constuctor) -> ConsumptionStatus array
 const consumptionRegistries = new WeakMap<Stack, Registry<ConsumptionStatus>>();
 
+interface IsConsumedProps extends RegistryManagementBaseProps {}
+
 // Checks if the given resource manager for the given stack has been consumed
-const isConsumed = (
-  stack: Stack,
-  manager: Function,
-  targetIdentifier: string,
-) =>
+const isConsumed = (props: IsConsumedProps) =>
   consumptionRegistries
-    .get(stack)
-    ?.get(manager)
-    ?.find((r) => r.targetIdentifier == targetIdentifier)?.consumed ?? false;
+    .get(props.stack)
+    ?.get(props.manager)
+    ?.find((r) => r.targetIdentifier == props.targetIdentifier)?.consumed ??
+  false;
+
+export interface ConsumeCloudfrontAccessorsProps
+  extends RegistryManagementBaseProps {}
 
 // Consume the cloudfrontAccessors for the provided manager construct of the given stack
 export const consumeCloudfrontAccessors = (
-  stack: Stack,
-  manager: Function,
-  targetIdentifier: string,
+  props: ConsumeCloudfrontAccessorsProps,
 ) => {
-  if (isConsumed(stack, manager, targetIdentifier))
+  const { stack, manager, targetIdentifier } = props;
+  if (isConsumed({ stack, manager, targetIdentifier }))
     throw new Error(
       `Manager for ${targetIdentifier} has already been consumed.`,
     );
@@ -61,15 +68,18 @@ export const consumeCloudfrontAccessors = (
   );
 };
 
+export interface RegisterCloudfrontAccessorProps
+  extends RegistryManagementBaseProps {
+  distributionId: string;
+  actions: string[];
+}
+
 // Manager functions that call this should specify a default list of actions for ergonomics
-export const addCloudfrontAccessor = (
-  stack: Stack,
-  manager: Function,
-  distributionId: string,
-  targetIdentifier: string,
-  actions: string[],
+export const registerCloudfrontAccessor = (
+  props: RegisterCloudfrontAccessorProps,
 ) => {
-  if (isConsumed(stack, manager, targetIdentifier))
+  const { stack, manager, targetIdentifier, distributionId, actions } = props;
+  if (isConsumed({ stack, manager, targetIdentifier }))
     throw new Error(
       `Cannot register resources for ${targetIdentifier} manager after creation ` +
         `(registering ${distributionId}).`,

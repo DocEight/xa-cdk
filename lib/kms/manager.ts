@@ -1,7 +1,13 @@
+import path from "path";
+
 import { Stack } from "aws-cdk-lib";
 import { Construct } from "constructs";
-import path from "path";
 import { CrossAccountManager } from "../cross-account";
+import { AllowCloudfrontBaseProps } from "../cross-account/xa-manager";
+
+export interface AllowCloudfrontProps extends AllowCloudfrontBaseProps {
+  keyId: string;
+}
 
 export interface CrossAccountKmsKeyManagerProps {
   xaKeyId: string;
@@ -59,27 +65,26 @@ export class CrossAccountKmsKeyManager extends CrossAccountManager {
    *  "kms:DescribeKey"
    * ])
    */
-  public static allowCloudfront(
-    context: Construct,
-    keyId: string,
-    cloudfrontId: string,
-    actions?: string[],
-  ) {
-    actions ??= [
-      "kms:Decrypt",
-      "kms:Encrypt",
-      "kms:GenerateDataKey*",
-      "kms:DescribeKey",
-    ];
-    const stack = Stack.of(context);
-    const caller = this;
-    actions ??= ["s3:GetObject"];
-    super.registerCloudfrontAccessor(
-      stack,
-      caller,
+  public static allowCloudfront(props: AllowCloudfrontProps) {
+    const {
+      scope,
+      distributionId,
       keyId,
-      cloudfrontId,
+      actions = [
+        "kms:Decrypt",
+        "kms:Encrypt",
+        "kms:GenerateDataKey*",
+        "kms:DescribeKey",
+      ],
+    } = props;
+    const stack = Stack.of(scope);
+    const manager = this;
+    super.registerCloudfrontAccessor({
+      stack,
+      manager,
+      targetIdentifier: keyId,
+      distributionId,
       actions,
-    );
+    });
   }
 }

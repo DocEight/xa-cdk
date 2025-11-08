@@ -9,9 +9,16 @@ import {
 } from "aws-cdk-lib/custom-resources";
 
 import {
-  addCloudfrontAccessor,
-  consumeCloudfrontAccessors,
+  ConsumeCloudfrontAccessorsProps,
+  RegisterCloudfrontAccessorProps,
 } from "./xa-manager-registry";
+import * as registry from "./xa-manager-registry";
+
+export interface AllowCloudfrontBaseProps {
+  scope: Construct;
+  distributionId: string;
+  actions?: string[];
+}
 
 export interface CrossAccountManagerProps {
   resourceIdentifier: string;
@@ -36,15 +43,9 @@ export abstract class CrossAccountManager extends Construct {
    * the mapping of accessor resource IDs to the permissions they need.
    */
   private static consumeCloudfrontAccessors(
-    stack: Stack,
-    caller: Function,
-    resourceIdentifier: string,
+    props: ConsumeCloudfrontAccessorsProps,
   ) {
-    const accessInfo = consumeCloudfrontAccessors(
-      stack,
-      caller,
-      resourceIdentifier,
-    );
+    const accessInfo = registry.consumeCloudfrontAccessors(props);
     const accessors: { [accessor: string]: string[] } = {};
     for (const access of accessInfo) {
       accessors[access.accessorIdentifier] = access.permissions;
@@ -102,12 +103,12 @@ export abstract class CrossAccountManager extends Construct {
     // Get the Cloudfront IDs and their permissions for this subclass from the
     // Registries
     const stack = Stack.of(this);
-    const caller = this.constructor;
-    const cloudfrontAccessors = CrossAccountManager.consumeCloudfrontAccessors(
+    const manager = this.constructor;
+    const cloudfrontAccessors = CrossAccountManager.consumeCloudfrontAccessors({
       stack,
-      caller,
-      resourceIdentifier,
-    );
+      manager,
+      targetIdentifier: resourceIdentifier,
+    });
 
     // Util factory to get an AwsSdkCall for the AwsCustomResource
     const callFor = (operation: string) => {
@@ -144,18 +145,8 @@ export abstract class CrossAccountManager extends Construct {
    * specifying a default list of actions
    */
   protected static registerCloudfrontAccessor(
-    stack: Stack,
-    caller: Function,
-    distributionId: string,
-    resourceIdentifier: string,
-    actions: string[],
+    props: RegisterCloudfrontAccessorProps,
   ) {
-    addCloudfrontAccessor(
-      stack,
-      caller,
-      distributionId,
-      resourceIdentifier,
-      actions,
-    );
+    registry.registerCloudfrontAccessor(props);
   }
 }

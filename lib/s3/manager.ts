@@ -1,7 +1,13 @@
+import path from "path";
+
 import { Stack } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { CrossAccountManager } from "../cross-account";
-import path from "path";
+import { AllowCloudfrontBaseProps } from "../cross-account/xa-manager";
+
+export interface AllowCloudfrontProps extends AllowCloudfrontBaseProps {
+  bucketName: string;
+}
 
 export interface CrossAccountS3BucketManagerProps {
   xaBucketName: string;
@@ -48,21 +54,21 @@ export class CrossAccountS3BucketManager extends CrossAccountManager {
    * Distribution ID
    * Optionally specify a list of actions (default: ["s3:GetObject"])
    */
-  public static allowCloudfront(
-    context: Construct,
-    cloudfrontId: string,
-    bucketName: string,
-    actions?: string[],
-  ) {
-    const stack = Stack.of(context);
-    const caller = this;
-    actions ??= ["s3:GetObject"];
-    super.registerCloudfrontAccessor(
-      stack,
-      caller,
-      cloudfrontId,
+  public static allowCloudfront(props: AllowCloudfrontProps) {
+    const {
+      scope,
+      distributionId,
       bucketName,
+      actions = ["s3:GetObject"],
+    } = props;
+    const stack = Stack.of(scope);
+    const manager = this;
+    super.registerCloudfrontAccessor({
+      stack,
+      manager,
+      targetIdentifier: bucketName,
+      distributionId,
       actions,
-    );
+    });
   }
 }
