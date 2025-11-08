@@ -39,11 +39,11 @@ test("XAS3 Manager single accessor", () => {
   const distributionIds = ["SOME_ID"];
 
   // WHEN
-  CrossAccountS3BucketManager.allowCloudfront(
-    stack,
-    distributionIds[0],
-    xaBucketName,
-  );
+  CrossAccountS3BucketManager.allowCloudfront({
+    scope: stack,
+    distributionId: distributionIds[0],
+    bucketName: xaBucketName,
+  });
   new CrossAccountS3BucketManager(stack, managerId, {
     xaBucketName,
     xaAwsId,
@@ -95,11 +95,11 @@ test("XAS3 Manager multiple accessors", () => {
 
   // WHEN
   for (const distributionId of distributionIds) {
-    CrossAccountS3BucketManager.allowCloudfront(
-      stack,
+    CrossAccountS3BucketManager.allowCloudfront({
+      scope: stack,
       distributionId,
-      xaBucketName,
-    );
+      bucketName: xaBucketName,
+    });
   }
   new CrossAccountS3BucketManager(stack, managerId, {
     xaBucketName,
@@ -150,7 +150,11 @@ test("XAS3 Manager improper usage", () => {
   });
 
   expect(() =>
-    CrossAccountS3BucketManager.allowCloudfront(stack, "bad :(", xaBucketName),
+    CrossAccountS3BucketManager.allowCloudfront({
+      scope: stack,
+      distributionId: "bad :(",
+      bucketName: xaBucketName,
+    }),
   ).toThrow(/Cannot register .+ after creation./);
 });
 
@@ -173,18 +177,18 @@ test("Multiple XAS3 Managers", () => {
   const actions2 = ["s3:GetObject", "s3:PutObject"];
 
   // WHEN
-  CrossAccountS3BucketManager.allowCloudfront(
-    stack,
-    distributionIds1[0],
-    xaBucketName1,
-  );
+  CrossAccountS3BucketManager.allowCloudfront({
+    scope: stack,
+    distributionId: distributionIds1[0],
+    bucketName: xaBucketName1,
+  });
   for (const distributionId of distributionIds2) {
-    CrossAccountS3BucketManager.allowCloudfront(
-      stack,
+    CrossAccountS3BucketManager.allowCloudfront({
+      scope: stack,
       distributionId,
-      xaBucketName2,
-      actions2,
-    );
+      bucketName: xaBucketName2,
+      actions: actions2,
+    });
   }
   new CrossAccountS3BucketManager(stack, managerId1, {
     xaBucketName: xaBucketName1,

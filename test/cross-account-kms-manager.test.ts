@@ -39,7 +39,11 @@ test("XAKMS Manager single accessor", () => {
   const distributionIds = ["SOME_ID"];
 
   // WHEN
-  CrossAccountKmsKeyManager.allowCloudfront(stack, distributionIds[0], xaKeyId);
+  CrossAccountKmsKeyManager.allowCloudfront({
+    scope: stack,
+    distributionId: distributionIds[0],
+    keyId: xaKeyId,
+  });
   new CrossAccountKmsKeyManager(stack, managerId, {
     xaKeyId,
     xaAwsId,
@@ -91,7 +95,11 @@ test("XAKMS Manager multiple accessors", () => {
 
   // WHEN
   for (const distributionId of distributionIds) {
-    CrossAccountKmsKeyManager.allowCloudfront(stack, distributionId, xaKeyId);
+    CrossAccountKmsKeyManager.allowCloudfront({
+      scope: stack,
+      distributionId,
+      keyId: xaKeyId,
+    });
   }
   new CrossAccountKmsKeyManager(stack, managerId, {
     xaKeyId,
@@ -142,7 +150,11 @@ test("XAKMS Manager improper usage", () => {
   });
 
   expect(() =>
-    CrossAccountKmsKeyManager.allowCloudfront(stack, "bad :(", xaKeyId),
+    CrossAccountKmsKeyManager.allowCloudfront({
+      scope: stack,
+      distributionId: "bad :(",
+      keyId: xaKeyId,
+    }),
   ).toThrow(/Cannot register .+ after creation./);
 });
 
@@ -165,18 +177,18 @@ test("Multiple XAKMS Managers", () => {
   const actions2 = ["kms:ListKeys", ...KMS_DEFAULT_ACTIONS];
 
   // WHEN
-  CrossAccountKmsKeyManager.allowCloudfront(
-    stack,
-    distributionIds1[0],
-    xaKeyId1,
-  );
+  CrossAccountKmsKeyManager.allowCloudfront({
+    scope: stack,
+    distributionId: distributionIds1[0],
+    keyId: xaKeyId1,
+  });
   for (const distributionId of distributionIds2) {
-    CrossAccountKmsKeyManager.allowCloudfront(
-      stack,
+    CrossAccountKmsKeyManager.allowCloudfront({
+      scope: stack,
       distributionId,
-      xaKeyId2,
-      actions2,
-    );
+      keyId: xaKeyId2,
+      actions: actions2,
+    });
   }
   new CrossAccountKmsKeyManager(stack, managerId1, {
     xaKeyId: xaKeyId1,
