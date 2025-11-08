@@ -1,49 +1,8 @@
 import { App, Stack } from "aws-cdk-lib/core";
-import { Match, Template } from "aws-cdk-lib/assertions";
+import { Template } from "aws-cdk-lib/assertions";
+
 import { CrossAccountS3Bucket } from "../lib";
-
-const getRoleNameMatcher = (bucketId: string) =>
-  Match.objectEquals({
-    "Fn::Join": Match.arrayEquals([
-      "",
-      Match.arrayEquals([
-        Match.objectEquals({
-          Ref: Match.stringLikeRegexp(`^${bucketId.replaceAll("-", "")}`),
-        }),
-        "-xa-mgmt",
-      ]),
-    ]),
-  });
-
-const getAwsPrincipalMatcher = (bucketName: string, id: string) =>
-  Match.objectEquals({
-    "Fn::Join": Match.arrayEquals([
-      "",
-      Match.arrayEquals([
-        `arn:aws:iam::${id}:role/`,
-        Match.objectEquals({
-          Ref: Match.stringLikeRegexp(`^${bucketName.replaceAll("-", "")}`),
-        }),
-        "-xa-mgmt-ex",
-      ]),
-    ]),
-  });
-
-const getAssumeRolePolicyMatcher = (bucketName: string, xaAwsIds: string[]) =>
-  Match.objectLike({
-    Statement: Match.arrayWith([
-      Match.objectLike({
-        Action: "sts:AssumeRole",
-        Principal: Match.objectLike({
-          AWS:
-            xaAwsIds.length == 1
-              ? getAwsPrincipalMatcher(bucketName, xaAwsIds[0])
-              : xaAwsIds.map((id) => getAwsPrincipalMatcher(bucketName, id)),
-        }),
-      }),
-    ]),
-    Version: "2012-10-17",
-  });
+import { getAssumeRolePolicyMatcher, getRoleNameMatcher } from "./matchers";
 
 test("Single Accessor XAS3", () => {
   const app = new App();
@@ -148,7 +107,6 @@ test("Several XAS3s", () => {
   // THEN
   const template = Template.fromStack(stack);
 
-  // Do me later
   template.hasResourceProperties("AWS::S3::Bucket", {
     BucketName: bucketId1,
   });
