@@ -28,14 +28,14 @@ export class CrossAccountKmsKey extends CrossAccountConstruct {
     const { xaAwsIds, ...keyProps } = props;
     super(scope, id, { xaAwsIds });
 
-    this.key = new Key(this, "xaKey", keyProps);
+    this.key = new Key(this, "XaKey", keyProps);
 
     this.createManagementRole(this.key.keyId, this.key.keyArn, [
       "kms:GetKeyPolicy",
       "kms:PutKeyPolicy",
     ]);
 
-    new CfnOutput(this, "xaKeyId", {
+    new CfnOutput(this, "XaKeyId", {
       value: this.key.keyId,
       description: "ID of the cross-account managed KMS key",
     });

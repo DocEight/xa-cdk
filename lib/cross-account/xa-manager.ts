@@ -86,7 +86,7 @@ export abstract class CrossAccountManager extends Construct {
     });
 
     // Manager Lambda
-    this.mgrFunction = new lambda.Function(this, "xamgmtLambda", {
+    this.mgrFunction = new lambda.Function(this, "XaMgmtLambda", {
       code: lambda.Code.fromAsset(subclassDir),
       handler: "main.handler",
       runtime: lambda.Runtime.PYTHON_3_13,
@@ -113,7 +113,7 @@ export abstract class CrossAccountManager extends Construct {
     // Util factory to get an AwsSdkCall for the AwsCustomResource
     const callFor = (operation: string) => {
       return {
-        physicalResourceId: PhysicalResourceId.of("xamgmtLambdaCaller"),
+        physicalResourceId: PhysicalResourceId.of("XaMgmtLambdaCaller"),
         service: "Lambda",
         action: "InvokeFunction",
         parameters: {
@@ -127,7 +127,7 @@ export abstract class CrossAccountManager extends Construct {
       };
     };
 
-    new AwsCustomResource(this, "xamgmtLambdaCaller", {
+    new AwsCustomResource(this, "XaMgmtLambdaCaller", {
       onCreate: callFor("create"),
       onUpdate: callFor("update"),
       onDelete: callFor("delete"),
