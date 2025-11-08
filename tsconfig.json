@@ -23,5 +23,5 @@
     "skipLibCheck": true,
     "typeRoots": ["./node_modules/@types"]
   },
-  "include": ["lib", "index.ts"]
+  "include": ["lib", "index.ts", "lambda-code"]
 }
