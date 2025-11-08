@@ -45,7 +45,7 @@ export class CrossAccountS3BucketManager extends CrossAccountManager {
       xaAwsId,
       managerTimeout,
       callerTimeout,
-      subclassDir: path.join(__dirname, "lambda-code"),
+      subclassDir: path.join("lambda-code", "s3"),
     });
   }
 

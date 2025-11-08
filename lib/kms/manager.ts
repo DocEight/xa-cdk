@@ -50,7 +50,7 @@ export class CrossAccountKmsKeyManager extends CrossAccountManager {
       xaAwsId,
       managerTimeout,
       callerTimeout,
-      subclassDir: path.join(__dirname, "lambda-code"),
+      subclassDir: path.join("lambda-code", "kms"),
     });
   }
 
