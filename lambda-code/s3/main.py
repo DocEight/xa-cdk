@@ -75,6 +75,15 @@ def put_bucket_policy(s3, policy):
         raise
 
 
+def delete_bucket_policy(s3):
+    try:
+        s3.delete_bucket_policy(Bucket=BUCKET_NAME)
+        logger.info("Successfully cleared empty bucket policy")
+    except ClientError as e:
+        logger.error(f"Failed to clear bucket policy: {e}")
+        raise
+
+
 def handler(event, context):
     operation = event["operation"]
     logger.info(f"operation: {operation}")
@@ -111,5 +120,8 @@ def handler(event, context):
             }
             bucket_policy["Statement"].append(statement)
 
-    # Update the bucket policy
-    put_bucket_policy(s3, bucket_policy)
+    # Update the bucket policy (delete if no statements are left)
+    if len(bucket_policy["Statement"]) > 0:
+        put_bucket_policy(s3, bucket_policy)
+    else:
+        delete_bucket_policy(s3)

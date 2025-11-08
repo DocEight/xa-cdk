@@ -41,6 +41,7 @@ export class CrossAccountS3Bucket extends CrossAccountConstruct {
     this.createManagementRole(this.bucket.bucketName, this.bucket.bucketArn, [
       "s3:GetBucketPolicy",
       "s3:PutBucketPolicy",
+      "s3:DeleteBucketPolicy",
     ]);
 
     new CfnOutput(this, "XaBucketName", {
