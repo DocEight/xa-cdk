@@ -1,6 +1,7 @@
 import json
-import os
 import logging
+import os
+
 import boto3
 from botocore.exceptions import ClientError
 
@@ -22,8 +23,8 @@ sts = (
 )
 
 XA_MGMT_ROLE_ARN = os.environ["XA_MGMT_ROLE_ARN"]
-BUCKET_NAME = os.environ["BUCKET_NAME"]
-ACCESSOR_AWS_ID = os.environ["ACCESSOR_AWS_ID"]
+BUCKET_NAME = os.environ["RESOURCE_ID"]
+ACCESSOR_ACCOUNT_ID = os.environ["ACCESSOR_ACCOUNT_ID"]
 ACCESSOR_STACK_NAME = os.environ["ACCESSOR_STACK_NAME"]
 
 logger = logging.getLogger()
@@ -85,7 +86,7 @@ def handler(event, context):
 
     # First, remove the statements set by this stack
     bucket_policy = get_bucket_policy(s3)
-    sid_prefix = f"{ACCESSOR_AWS_ID} {ACCESSOR_STACK_NAME} "
+    sid_prefix = f"{ACCESSOR_ACCOUNT_ID} {ACCESSOR_STACK_NAME} "
     bucket_policy["Statement"] = [
         statement
         for statement in bucket_policy["Statement"]
@@ -104,7 +105,7 @@ def handler(event, context):
                 "Resource": f"arn:aws:s3:::{BUCKET_NAME}/*",
                 "Condition": {
                     "StringEquals": {
-                        "AWS:SourceArn": f"arn:aws:cloudfront::{ACCESSOR_AWS_ID}:distribution/{id}"
+                        "AWS:SourceArn": f"arn:aws:cloudfront::{ACCESSOR_ACCOUNT_ID}:distribution/{id}"
                     }
                 },
             }

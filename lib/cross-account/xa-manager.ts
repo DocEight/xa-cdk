@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { Duration, Stack } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as iam from "aws-cdk-lib/aws-iam";
@@ -27,6 +28,17 @@ export interface CrossAccountManagerProps {
   callerTimeout?: number;
   subclassDir: string;
 }
+
+const hashAccessors = (accessors: { [accessor: string]: string[] }) => {
+  const snapshot = JSON.stringify(
+    Object.fromEntries(
+      Object.entries(accessors)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => [k, v.sort()]),
+    ),
+  );
+  return createHash("sha256").update(snapshot).digest("hex").slice(0, 16);
+};
 
 export abstract class CrossAccountManager extends Construct {
   /**
@@ -82,6 +94,11 @@ export abstract class CrossAccountManager extends Construct {
       inlinePolicies: {
         assumeXaMgmtRolePolicy,
       },
+      managedPolicies: [
+        iam.ManagedPolicy.fromAwsManagedPolicyName(
+          "service-role/AWSLambdaBasicExecutionRole",
+        ),
+      ],
       roleName: `${resourceIdentifier}-xa-mgmt-ex`,
     });
 
@@ -109,13 +126,14 @@ export abstract class CrossAccountManager extends Construct {
       manager,
       targetIdentifier: resourceIdentifier,
     });
+    const cloudfrontAccessorsHash = hashAccessors(cloudfrontAccessors);
 
     // Util factory to get an AwsSdkCall for the AwsCustomResource
     const callFor = (operation: string) => {
       return {
-        physicalResourceId: PhysicalResourceId.of("XaMgmtLambdaCaller"),
+        physicalResourceId: PhysicalResourceId.of(cloudfrontAccessorsHash),
         service: "Lambda",
-        action: "InvokeFunction",
+        action: "Invoke",
         parameters: {
           FunctionName: this.function.functionName,
           InvocationType: "Event",
@@ -127,7 +145,7 @@ export abstract class CrossAccountManager extends Construct {
       };
     };
 
-    new AwsCustomResource(this, "XaMgmtLambdaCaller", {
+    const caller = new AwsCustomResource(this, "XaMgmtLambdaCaller", {
       onCreate: callFor("create"),
       onUpdate: callFor("update"),
       onDelete: callFor("delete"),
@@ -136,6 +154,7 @@ export abstract class CrossAccountManager extends Construct {
       }),
       timeout: Duration.seconds(callerTimeout),
     });
+    this.function.grantInvoke(caller.grantPrincipal);
   }
 
   /**

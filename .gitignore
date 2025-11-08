@@ -10,3 +10,5 @@ cdk.out
 **/.venv
 
 dist/
+
+*.tgz

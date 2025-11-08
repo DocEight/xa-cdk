@@ -1,6 +1,7 @@
 import json
-import os
 import logging
+import os
+
 import boto3
 from botocore.exceptions import ClientError
 
@@ -22,8 +23,8 @@ sts = (
 )
 
 XA_MGMT_ROLE_ARN = os.environ["XA_MGMT_ROLE_ARN"]
-KEY_ID = os.environ["KEY_ID"]
-ACCESSOR_AWS_ID = os.environ["ACCESSOR_AWS_ID"]
+KEY_ID = os.environ["RESOURCE_ID"]
+ACCESSOR_ACCOUNT_ID = os.environ["ACCESSOR_ACCOUNT_ID"]
 ACCESSOR_STACK_NAME = os.environ["ACCESSOR_STACK_NAME"]
 
 logger = logging.getLogger()
@@ -82,7 +83,7 @@ def handler(event, context):
 
     # First, remove the statements set by this stack
     key_policy = get_key_policy(kms)
-    sid_prefix = f"{ACCESSOR_AWS_ID} {ACCESSOR_STACK_NAME} "
+    sid_prefix = f"{ACCESSOR_ACCOUNT_ID} {ACCESSOR_STACK_NAME} "
     key_policy["Statement"] = [
         statement
         for statement in key_policy["Statement"]
@@ -101,7 +102,7 @@ def handler(event, context):
                 "Resource": "*",
                 "Condition": {
                     "StringEquals": {
-                        "AWS:SourceArn": f"arn:aws:cloudfront::{ACCESSOR_AWS_ID}:distribution/{id}"
+                        "AWS:SourceArn": f"arn:aws:cloudfront::{ACCESSOR_ACCOUNT_ID}:distribution/{id}"
                     }
                 },
             }
