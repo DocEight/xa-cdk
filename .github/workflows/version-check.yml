@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          fetch-tags: true
+          fetch-tags: true # required to check tags
 
       - name: Check version bump
         id: check-version
