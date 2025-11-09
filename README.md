@@ -5,14 +5,14 @@
 
 ## Description
 
-This library contains resources that can be configured to be accessible across AWS accounts.
-By default, CDK can't update the resource policies of resources in another account, so when
-setting up cross-account access between resources, some manual configuration is required.
+This library contains resources that can be configured to be accessible across AWS accounts.  
+By default, CDK can't update the resource policies of resources in another account, so when  
+setting up cross-account access between resources, some manual configuration is required.  
 
-BUT NO MORE.
-No more shall developers be forced to click through dashboard menus (or type CLI commands,
-tedious in its own right) to simply access their S3 buckets (et al) from another account!
-FREEDOM!!
+BUT NO MORE.  
+No more shall developers be forced to click through dashboard menus (or type CLI commands,  
+tedious in its own right) to simply access their S3 buckets (et al) from another account!  
+FREEDOM!!  
 
 ## Installation
 
@@ -21,9 +21,9 @@ Run:
 
 ## Usage
 
-Given accessed AWS account with ID: `000000000000`
-and accessor AWS account with ID: `111111111111`,
-you can automate IAM policy management across AWS accounts/CDK stacks using the following pattern:
+Given accessed AWS account with ID: `000000000000`  
+and accessor AWS account with ID: `111111111111`,  
+you can automate IAM policy management across AWS accounts/CDK stacks using the following pattern:  
 
 1. In `000000000000`: Deploy the resource(s) to be accessed
 
@@ -187,10 +187,10 @@ architecture-beta
 
 ```
 
-(One of these days GitHub will support logos:aws-icons in its inline Mermaid diagrams, thus
-I'm using them now.
-If they still aren't rendering properly by the time you read this, here's a link to a prerendered
-.svg diagram as well.)
+(One of these days GitHub will support logos:aws-icons in its inline Mermaid diagrams, thus  
+I'm using them now.  
+If they still aren't rendering properly by the time you read this, here's a link to a prerendered  
+.svg diagram as well.)  
 
 ## License
 
