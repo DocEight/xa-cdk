@@ -35,9 +35,9 @@ export class CrossAccountKmsKey extends CrossAccountConstruct {
       "kms:PutKeyPolicy",
     ]);
 
-    new CfnOutput(this, "XaKeyId", {
-      value: this.key.keyId,
-      description: "ID of the cross-account managed KMS key",
+    new CfnOutput(this, "XaKeyArn", {
+      value: this.key.keyArn,
+      description: "ARN of the cross-account managed KMS key",
     });
   }
 }
