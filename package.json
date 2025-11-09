@@ -1,6 +1,6 @@
 {
   "name": "@doceight/xa-cdk",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "CDK constructs for facilitating cross-account resource access",
   "repository": {
     "type": "git",
