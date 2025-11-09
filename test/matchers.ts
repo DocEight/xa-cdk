@@ -22,7 +22,9 @@ export const getAwsPrincipalMatcher = (resourceName: string, awsId: string) =>
       Match.arrayEquals([
         `arn:aws:iam::${awsId}:role/`,
         Match.objectEquals({
-          Ref: Match.stringLikeRegexp(`^${resourceName.replaceAll("-", "")}`),
+          Ref: Match.stringLikeRegexp(
+            `^${resourceName.replaceAll("-", "").replaceAll("_", "")}`,
+          ),
         }),
         "-xa-mgmt-ex",
       ]),
@@ -37,11 +39,12 @@ export const getAssumeRolePolicyMatcher = (
     Statement: Match.arrayWith([
       Match.objectLike({
         Action: "sts:AssumeRole",
-        Principal: Match.objectLike({
-          AWS:
-            xaAwsIds.length == 1
-              ? getAwsPrincipalMatcher(resourceName, xaAwsIds[0])
-              : xaAwsIds.map((id) => getAwsPrincipalMatcher(resourceName, id)),
+        Condition: Match.objectEquals({
+          StringLike: Match.objectEquals({
+            "aws:PrincipalArn": Match.arrayWith(
+              xaAwsIds.map((id) => getAwsPrincipalMatcher(resourceName, id)),
+            ),
+          }),
         }),
       }),
     ]),
@@ -81,7 +84,7 @@ export const getEventMatcher = (
             operation,
             "cloudfrontAccessors",
             ...distributionIds,
-            ...actions,
+            ...actions.sort(),
           ].join("(.+)"),
         ),
       ]),
