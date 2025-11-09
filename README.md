@@ -23,7 +23,8 @@ Run:
 
 Given accessed AWS account with ID: `000000000000`  
 and accessor AWS account with ID: `111111111111`,  
-you can automate IAM policy management across AWS accounts/CDK stacks using the following pattern:  
+you can automate IAM policy management across AWS accounts/CDK stacks using the following  
+pattern:  
 
 1. In `000000000000`: Deploy the resource(s) to be accessed
 
