@@ -1,10 +1,10 @@
 {
   "name": "@doceight/xa-cdk",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "CDK constructs for facilitating cross-account resource access",
   "repository": {
     "type": "git",
-    "url": "https://github.com/DocEight/xa-cdk.git"
+    "url": "git+https://github.com/DocEight/xa-cdk.git"
   },
   "license": "MIT",
   "keywords": [
@@ -18,7 +18,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r lambda-code dist/",
     "watch": "tsc -w",
     "test": "jest",
     "prepare": "husky install"
@@ -38,7 +38,11 @@
     "constructs": "^10.0.0"
   },
   "files": [
-    "dist",
-    "lambda-code"
-  ]
+    "dist"
+  ],
+  "homepage": "https://github.com/DocEight/xa-cdk#readme",
+  "bugs": {
+    "url": "https://github.com/DocEight/xa-cdk/issues"
+  },
+  "author": "doceight"
 }
