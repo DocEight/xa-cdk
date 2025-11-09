@@ -1,5 +1,5 @@
 {
-  "name": "xa-cdk",
+  "name": "@doceight/xa-cdk",
   "version": "1.0.0",
   "description": "CDK constructs for facilitating cross-account resource access",
   "repository": {

@@ -16,7 +16,8 @@ FREEDOM!!
 
 ## Installation
 
-TODO
+Run:
+`npm install @doceight/xa-cdk`
 
 ## Usage
 
