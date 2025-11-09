@@ -1,4 +1,6 @@
-# cross-account resources
+# xa-cdk
+
+## Description
 
 This library contains resources that can be configured to be accessible across AWS accounts.
 By default, CDK can't update the resource policies of resources in another account, so when
@@ -9,7 +11,96 @@ No more shall developers be forced to click through dashboard menus (or type CLI
 tedious in its own right) to simply access their S3 buckets (et al) from another account!
 FREEDOM!!
 
-# Diagram
+## Installation
+
+TODO
+
+## Usage
+
+Given accessed AWS account with ID: `000000000000`
+and accessor AWS account with ID: `111111111111`,
+you can automate IAM policy management across AWS accounts/CDK stacks using the following pattern:
+
+1. In `000000000000`: Deploy the resource(s) to be accessed
+
+```typescript
+const key = new xa.CrossAccountKmsKey(this, "xaKey", {
+  xaAwsIds: ["111111111111"], // AWS account IDs that need access
+});
+
+new xa.CrossAccountS3Bucket(this, "XaBucket", {
+  bucketName: "xa-bucket",
+  xaAwsIds: ["111111111111"], // AWS account IDs that need access
+  encryptionKey: key.key,
+});
+```
+
+2. In `111111111111`: Register the resources that need access
+
+```typescript
+// Import the resources to be accessed
+const xaBucket = s3.Bucket.fromBucketName(
+  this,
+  "XaBucket",
+  "xa-bucket",
+);
+const xaKey = kms.Key.fromKeyArn(
+  this,
+  "XaKey",
+  "arn:aws:kms:ap-northeast-1:000000000000:key/00000000-0000-4000-000-000000000000",
+);
+
+// Make the distribution itself
+this.distribution = new cloudfront.Distribution(this, "Distribution", {
+  defaultBehavior: {
+    origin: origins.S3BucketOrigin.withOriginAccessControl(xaBucket),
+  },
+});
+
+// Register the Cloudfront distribution with the S3 Bucket and KMS key here
+xa.CrossAccountS3BucketManager.allowCloudfront({
+  scope: this,
+  bucketName: xaBucket.bucketName,
+  distributionId: this.distribution.distributionId,
+});
+xa.CrossAccountKmsKeyManager.allowCloudfront({
+  scope: this,
+  keyId: xaKey.keyId,
+  distributionId: this.distribution.distributionId,
+});
+```
+
+3. In `111111111111`: After all accessors have been registered, create a cross-account resource manager for each resource in the other account
+
+```typescript
+...
+
+// Create resource managers to update policies on the resources in the other account
+new xa.CrossAccountS3BucketManager(this, "XaBucketMgmt", {
+  xaBucketName: "xa-bucket",
+  xaAwsId: "000000000000", // AWS account ID of the S3 Bucket
+});
+new xa.CrossAccountKmsKeyManager(this, "XaKeyMgmt", {
+  xaKeyId: "00000000-0000-4000-000-000000000000",
+  xaAwsId: "000000000000", // AWS account ID of the KMS Key
+});
+
+```
+
+**Note:** Attempting to register new accessors after this step will result in an error.
+
+## API Reference
+
+(v1.0.0)
+
+- Managed S3 Bucket: `CrossAccountS3Bucket(scope: Construct, id: string, { xaAwsIds: string[], ...BucketProps })`
+- Managed KMS key: `CrossAccountKmsKey(scope: Construct, id: string, { xaAwsIds: string[], ...KeyProps })`
+- S3 Bucket Manager: `CrossAccountS3BucketManager(scope: Construct, id: string, { xaBucketName: string, xaAwsId: string, managerTimeout?: number = 30, callerTimeout?: number = 30 })`
+  - Register Cloudfront distribution: `static allowCloudfront({ scope: Construct, distributionId: string, bucketName: string, actions?: string[] = ["s3:GetObject"] })`
+- KMS Key Manager: `CrossAccountKmsKeyManager(scope: Construct, id: string, { xaKeyId: string, xaAwsId: string, managerTimeout?: number = 30, callerTimeout?: number = 30 })`
+  - Register Cloudfront distribution: `static allowCloudfront({ scope: Construct, distributionId: string, keyId: string, actions?: string[] = ["kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey*", "kms:DescribeKey"] })`
+
+## Diagram
 
 ```mermaid
 
@@ -47,3 +138,5 @@ architecture-beta
 I'm using them now.
 If they still aren't rendering properly by the time you read this, here's a link to a prerendered
 .svg diagram as well.)
+
+## Contributing / License
