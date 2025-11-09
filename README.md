@@ -1,5 +1,8 @@
 # xa-cdk
 
+![npm](https://img.shields.io/npm/v/xa-cdk)
+![MIT](https://img.shields.io/badge/license-MIT-green)
+
 ## Description
 
 This library contains resources that can be configured to be accessible across AWS accounts.
@@ -93,12 +96,61 @@ new xa.CrossAccountKmsKeyManager(this, "XaKeyMgmt", {
 
 (v1.0.0)
 
-- Managed S3 Bucket: `CrossAccountS3Bucket(scope: Construct, id: string, { xaAwsIds: string[], ...BucketProps })`
-- Managed KMS key: `CrossAccountKmsKey(scope: Construct, id: string, { xaAwsIds: string[], ...KeyProps })`
-- S3 Bucket Manager: `CrossAccountS3BucketManager(scope: Construct, id: string, { xaBucketName: string, xaAwsId: string, managerTimeout?: number = 30, callerTimeout?: number = 30 })`
-  - Register Cloudfront distribution: `static allowCloudfront({ scope: Construct, distributionId: string, bucketName: string, actions?: string[] = ["s3:GetObject"] })`
-- KMS Key Manager: `CrossAccountKmsKeyManager(scope: Construct, id: string, { xaKeyId: string, xaAwsId: string, managerTimeout?: number = 30, callerTimeout?: number = 30 })`
-  - Register Cloudfront distribution: `static allowCloudfront({ scope: Construct, distributionId: string, keyId: string, actions?: string[] = ["kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey*", "kms:DescribeKey"] })`
+- Managed S3 Bucket:
+```typescript
+CrossAccountS3Bucket(scope: Construct, id: string, {
+  xaAwsIds: string[],
+  ...s3.BucketProps
+})
+```
+- Managed KMS key:
+```typescript
+CrossAccountKmsKey(scope: Construct, id: string, {
+  xaAwsIds: string[],
+  ...kms.KeyProps
+})
+```
+- S3 Bucket Manager:
+```typescript
+CrossAccountS3BucketManager(scope: Construct, id: string, {
+  xaBucketName: string,
+  xaAwsId: string,
+  managerTimeout?: number = 30,
+  callerTimeout?: number = 30
+})
+```
+  - Register Cloudfront distribution:
+  ```typescript
+  static allowCloudfront({
+    scope: Construct,
+    distributionId: string,
+    bucketName: string,
+    actions?: string[] = ["s3:GetObject"]
+  })
+  ```
+- KMS Key Manager:
+```typescript
+CrossAccountKmsKeyManager(scope: Construct, id: string, {
+  xaKeyId: string,
+  xaAwsId: string,
+  managerTimeout?: number = 30,
+  callerTimeout?: number = 30
+})
+```
+  - Register Cloudfront distribution:
+  ```typescript
+  static allowCloudfront({
+    scope: Construct,
+    distributionId: string,
+    keyId: string,
+    actions?: string[] = [
+      "kms:Decrypt",
+      "kms:Encrypt",
+      "kms:GenerateDataKey*",
+      "kms:DescribeKey"
+    ]
+  })
+  ```
 
 ## Diagram
 
@@ -139,4 +191,6 @@ I'm using them now.
 If they still aren't rendering properly by the time you read this, here's a link to a prerendered
 .svg diagram as well.)
 
-## Contributing / License
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
