@@ -4,7 +4,7 @@
   "description": "CDK constructs for facilitating cross-account resource access",
   "repository": {
     "type": "git",
-    "url": "https://github.com/DocEight/xa-cdk.git"
+    "url": "git+https://github.com/DocEight/xa-cdk.git"
   },
   "license": "MIT",
   "keywords": [
@@ -40,5 +40,10 @@
   "files": [
     "dist",
     "lambda-code"
-  ]
+  ],
+  "homepage": "https://github.com/DocEight/xa-cdk#readme",
+  "bugs": {
+    "url": "https://github.com/DocEight/xa-cdk/issues"
+  },
+  "author": "doceight"
 }
