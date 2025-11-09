@@ -1,0 +1,47 @@
+name: Version Check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  version-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check version bump
+        id: check-version
+        run: |
+          git fetch origin main
+          git fetch --tags origin main
+          if ! git diff origin/main package.json | grep '"version":'; then
+            echo "ERROR: package.json version must be bumped"
+            exit 1
+          fi
+          VERSION=$(jq -r '.version' package.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check for git tag on commit
+        id: check-tag
+        run: |
+          # Get tags pointing at HEAD
+          TAG=$(git tag --points-at HEAD | head -n1)
+          if [ -z "$TAG" ]; then
+            echo "ERROR: Commit must be tagged with a version before merging to main"
+            exit 1
+          fi
+          echo "Found tag(s): $TAG"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Check that tag matches version
+        run: |
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "ERROR: Git tag ($TAG) does not match package.json version (v$VERSION)"
+            exit 1
+          fi
+          echo "Git tag matches package.json version ✅"
+        env:
+          VERSION: ${{ steps.check-version.outputs.version }}
+          TAG: ${{ steps.check-tag.outputs.tag }}

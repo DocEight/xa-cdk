@@ -1,0 +1,8 @@
+#!/bin/sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+CHANGED=$(git diff origin/main package.json | grep '"version":')
+if [ -z "$CHANGED" ]; then
+  echo "ERROR: You must update package.json version before pushing to main!"
+  exit 1
+fi

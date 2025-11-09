@@ -20,13 +20,15 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "jest"
+    "test": "jest",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "22.7.9",
     "aws-cdk-lib": "2.215.0",
     "constructs": "^10.0.0",
+    "husky": "^8.0.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.5",
     "typescript": "~5.6.3"
