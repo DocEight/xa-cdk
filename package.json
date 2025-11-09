@@ -1,6 +1,20 @@
 {
-  "name": "cross-account",
-  "version": "0.1.0",
+  "name": "xa-cdk",
+  "version": "1.0.0",
+  "description": "CDK constructs for facilitating cross-account resource access",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DocEight/xa-cdk.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "aws",
+    "cdk",
+    "s3",
+    "kms",
+    "cloudfront",
+    "cross-account"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
