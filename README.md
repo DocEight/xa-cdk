@@ -189,9 +189,7 @@ architecture-beta
 ```
 
 (One of these days GitHub will support logos:aws-icons in its inline Mermaid diagrams, thus  
-I'm using them now.  
-If they still aren't rendering properly by the time you read this, here's a link to a prerendered  
-.svg diagram as well.)  
+I'm using them now.)  
 
 ## License
 
