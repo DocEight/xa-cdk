@@ -1,0 +1,44 @@
+{
+  "name": "@doceight/xa-cdk",
+  "version": "1.0.0",
+  "description": "CDK constructs for facilitating cross-account resource access",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DocEight/xa-cdk.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "aws",
+    "cdk",
+    "s3",
+    "kms",
+    "cloudfront",
+    "cross-account"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "22.7.9",
+    "aws-cdk-lib": "2.215.0",
+    "constructs": "^10.0.0",
+    "husky": "^8.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "~5.6.3"
+  },
+  "peerDependencies": {
+    "aws-cdk-lib": "2.215.0",
+    "constructs": "^10.0.0"
+  },
+  "files": [
+    "dist",
+    "lambda-code"
+  ]
+}

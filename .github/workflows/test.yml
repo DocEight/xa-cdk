@@ -1,0 +1,25 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  template-test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run template tests
+        run: npm run test
+
+      - name: Check that code builds
+        run: npm run build
