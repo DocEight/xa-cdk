@@ -2,8 +2,8 @@ name: Publish
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "v*"
 
 permissions:
   id-token: write # Required for OIDC
@@ -33,5 +33,5 @@ jobs:
       - name: Build module
         run: npm run build
 
-      - name: Build module
+      - name: Publish module
         run: npm publish --access public
