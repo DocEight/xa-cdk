@@ -1,14 +1,6 @@
 import { Construct } from "constructs";
 import { CfnOutput } from "aws-cdk-lib";
-import {
-  AccountPrincipal,
-  AccountRootPrincipal,
-  ArnPrincipal,
-  Effect,
-  PolicyDocument,
-  PolicyStatement,
-  Role,
-} from "aws-cdk-lib/aws-iam";
+import * as iam from "aws-cdk-lib/aws-iam";
 
 /**
  * Properties for CrossAccountConstruct.
@@ -33,10 +25,10 @@ export interface CrossAccountConstructProps {
  */
 export abstract class CrossAccountConstruct extends Construct {
   /** The IAM role used for cross-account policy management */
-  private mgmtRole: Role;
+  private mgmtRole: iam.Role;
 
   /** Getter for the cross-account management role */
-  public get role(): Role {
+  public get role(): iam.Role {
     return this.mgmtRole;
   }
 
@@ -54,15 +46,15 @@ export abstract class CrossAccountConstruct extends Construct {
     policyTarget: string,
     policyActions: string[],
   ) {
-    this.mgmtRole = new Role(this, "XaMgmtRole", {
-      assumedBy: new AccountRootPrincipal(), // placeholder
+    this.mgmtRole = new iam.Role(this, "XaMgmtRole", {
+      assumedBy: new iam.AccountRootPrincipal(), // placeholder
       description: `IAM role to enable cross-account management of policy for ${resourceIdentifier}`,
       roleName: `${resourceIdentifier}-xa-mgmt`,
       inlinePolicies: {
-        UpdateResourcePolicy: new PolicyDocument({
+        UpdateResourcePolicy: new iam.PolicyDocument({
           statements: [
-            new PolicyStatement({
-              effect: Effect.ALLOW,
+            new iam.PolicyStatement({
+              effect: iam.Effect.ALLOW,
               actions: policyActions,
               resources: [policyTarget],
             }),
@@ -73,9 +65,9 @@ export abstract class CrossAccountConstruct extends Construct {
     const accessorRoleName = `${resourceIdentifier}-xa-mgmt-ex`;
 
     this.role.assumeRolePolicy?.addStatements(
-      new PolicyStatement({
-        effect: Effect.ALLOW,
-        principals: this.xaAwsIds.map((id) => new AccountPrincipal(id)),
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        principals: this.xaAwsIds.map((id) => new iam.AccountPrincipal(id)),
         actions: ["sts:AssumeRole"],
         conditions: {
           StringLike: {
