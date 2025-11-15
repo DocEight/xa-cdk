@@ -1,7 +1,8 @@
 import { App, Stack } from "aws-cdk-lib/core";
 import { Template } from "aws-cdk-lib/assertions";
+import * as kms from "aws-cdk-lib/aws-kms";
 
-import { CrossAccountKmsKey } from "../lib/kms";
+import { CrossAccountKmsKey, CrossAccountKmsKeyWrapper } from "../lib/kms";
 import { getAssumeRolePolicyMatcher, getRoleNameMatcher } from "./matchers";
 
 test("Single Accessor XAKMS", () => {
@@ -66,6 +67,93 @@ test("Several XAKMSes", () => {
     xaAwsIds: xaAwsIds1,
   });
   new CrossAccountKmsKey(stack, keyId2, {
+    xaAwsIds: xaAwsIds2,
+  });
+  // THEN
+  const template = Template.fromStack(stack);
+
+  template.hasResource("AWS::KMS::Key", {});
+  template.hasResourceProperties("AWS::KMS::Alias", {
+    AliasName: `alias/${alias1}`,
+  });
+  template.hasResourceProperties("AWS::IAM::Role", {
+    RoleName: getRoleNameMatcher(keyId1),
+    AssumeRolePolicyDocument: getAssumeRolePolicyMatcher(keyId1, xaAwsIds1),
+  });
+
+  template.hasResourceProperties("AWS::IAM::Role", {
+    RoleName: getRoleNameMatcher(keyId2),
+    AssumeRolePolicyDocument: getAssumeRolePolicyMatcher(keyId2, xaAwsIds2),
+  });
+});
+
+test("Single Accessor XAKMS Wrapper", () => {
+  const app = new App();
+  const stack = new Stack(app, "test-stack");
+  const keyId = "test-xakms-single-accessor";
+  const alias = "test-xakms-s";
+  const xaAwsIds = ["000000000000"];
+  // WHEN
+  const existing = new kms.Key(stack, keyId, { alias });
+  new CrossAccountKmsKeyWrapper(stack, `${keyId}Wrapper`, {
+    existing,
+    xaAwsIds,
+  });
+  // THEN
+  const template = Template.fromStack(stack);
+
+  template.hasResource("AWS::KMS::Key", {});
+  template.hasResourceProperties("AWS::KMS::Alias", {
+    AliasName: `alias/${alias}`,
+  });
+  template.hasResourceProperties("AWS::IAM::Role", {
+    RoleName: getRoleNameMatcher(keyId),
+    AssumeRolePolicyDocument: getAssumeRolePolicyMatcher(keyId, xaAwsIds),
+  });
+});
+
+test("Multi Accessor XAKMS Wrapper", () => {
+  const app = new App();
+  const stack = new Stack(app, "test-stack");
+  const keyId = "test-xakms-multi-accessor";
+  const alias = "test-xakms-m";
+  const xaAwsIds = ["000000000000", "111111111111", "222222222222"];
+  // WHEN
+  const existing = new kms.Key(stack, keyId, { alias });
+  new CrossAccountKmsKeyWrapper(stack, `${keyId}Wrapper`, {
+    existing,
+    xaAwsIds,
+  });
+  // THEN
+  const template = Template.fromStack(stack);
+
+  template.hasResource("AWS::KMS::Key", {});
+  template.hasResourceProperties("AWS::KMS::Alias", {
+    AliasName: `alias/${alias}`,
+  });
+  template.hasResourceProperties("AWS::IAM::Role", {
+    RoleName: getRoleNameMatcher(keyId),
+    AssumeRolePolicyDocument: getAssumeRolePolicyMatcher(keyId, xaAwsIds),
+  });
+});
+
+test("Several XAKMS Wrappers", () => {
+  const app = new App();
+  const stack = new Stack(app, "test-stack");
+  const keyId1 = "test-xakms-1";
+  const alias1 = "test-xakms-alias-1";
+  const xaAwsIds1 = ["000000000000"];
+  const keyId2 = "test-xakms-2";
+  const xaAwsIds2 = ["111111111111"];
+  // WHEN
+  const existing1 = new kms.Key(stack, keyId1, { alias: alias1 });
+  new CrossAccountKmsKeyWrapper(stack, `${keyId1}Wrapper`, {
+    existing: existing1,
+    xaAwsIds: xaAwsIds1,
+  });
+  const existing2 = new kms.Key(stack, keyId2);
+  new CrossAccountKmsKeyWrapper(stack, `${keyId2}Wrapper`, {
+    existing: existing2,
     xaAwsIds: xaAwsIds2,
   });
   // THEN
