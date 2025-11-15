@@ -8,7 +8,10 @@ else
   exit 0
 fi
 
+npm run test
 if git diff origin/main package.json | grep '"version":'; then
+    echo "Looks like version has been updated in package.json"
+else
   echo "ERROR: You must update package.json version before pushing to main!"
   exit 1
 fi
