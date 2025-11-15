@@ -14,6 +14,7 @@ export interface CrossAccountKmsKeyManagerProps {
   xaAwsId: string;
   managerTimeout?: number;
   callerTimeout?: number;
+  autoRefresh?: boolean;
 }
 
 /**
@@ -29,6 +30,10 @@ export interface CrossAccountKmsKeyManagerProps {
  *   Lambda Function's timeout (defaults to 30).
  * - `callerTimeout` is optional and specifies the number of seconds for the
  *   AwsCustomResource's timeout (defaults to 30).
+ * - `autoRefresh` is optional and specifies whether or not to set the cross-account
+ *   resource policy on every deployment.
+ *   **pros**: if the policy has been overwritten this will auto-repair it
+ *   **cons**: generates noise in CDK diff output
  * - To use this construct, first register the resources that need to access a given
  *   KMS key using one of the following static registry functions:
  *   - allowCloudfront(keyId, cloudfrontId)
@@ -44,6 +49,7 @@ export class CrossAccountKmsKeyManager extends CrossAccountManager {
       xaAwsId,
       managerTimeout,
       callerTimeout, // default timeout of 3 seconds is awful short/fragile
+      autoRefresh,
     } = props;
     super(scope, id, {
       resourceIdentifier: xaKeyId,
@@ -51,6 +57,7 @@ export class CrossAccountKmsKeyManager extends CrossAccountManager {
       managerTimeout,
       callerTimeout,
       subclassDir: path.join(__dirname, "../../lambda-code/kms"),
+      autoRefresh,
     });
   }
 

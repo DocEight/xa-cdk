@@ -14,6 +14,7 @@ export interface CrossAccountS3BucketManagerProps {
   xaAwsId: string;
   managerTimeout?: number;
   callerTimeout?: number;
+  autoRefresh?: boolean;
 }
 
 /**
@@ -29,6 +30,10 @@ export interface CrossAccountS3BucketManagerProps {
  *   Lambda Function's timeout (defaults to 30).
  * - `callerTimeout` is optional and specifies the number of seconds for the
  *   AwsCustomResource's timeout (defaults to 30).
+ * - `autoRefresh` is optional and specifies whether or not to set the cross-account
+ *   resource policy on every deployment.
+ *   **pros**: if the policy has been overwritten this will auto-repair it
+ *   **cons**: generates noise in CDK diff output
  * - To use this construct, first register the resources that need to access a given
  *   S3 Bucket using one of the following static registry functions:
  *   - allowCloudfront(bucketName, cloudfrontId)
@@ -39,13 +44,20 @@ export class CrossAccountS3BucketManager extends CrossAccountManager {
     id: string,
     props: CrossAccountS3BucketManagerProps,
   ) {
-    const { xaBucketName, xaAwsId, managerTimeout, callerTimeout } = props;
+    const {
+      xaBucketName,
+      xaAwsId,
+      managerTimeout,
+      callerTimeout,
+      autoRefresh,
+    } = props;
     super(scope, id, {
       resourceIdentifier: xaBucketName,
       xaAwsId,
       managerTimeout,
       callerTimeout,
       subclassDir: path.join(__dirname, "../../lambda-code/s3"),
+      autoRefresh,
     });
   }
 
