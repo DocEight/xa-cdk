@@ -1,7 +1,8 @@
 import { App, Stack } from "aws-cdk-lib/core";
 import { Template } from "aws-cdk-lib/assertions";
+import * as s3 from "aws-cdk-lib/aws-s3";
 
-import { CrossAccountS3Bucket } from "../lib/s3";
+import { CrossAccountS3Bucket, CrossAccountS3BucketWrapper } from "../lib/s3";
 import { getAssumeRolePolicyMatcher, getRoleNameMatcher } from "./matchers";
 
 test("Single Accessor XAS3", () => {
@@ -102,6 +103,120 @@ test("Several XAS3s", () => {
   });
   new CrossAccountS3Bucket(stack, bucketId2, {
     bucketName: bucketId2,
+    xaAwsIds: xaAwsIds2,
+  });
+  // THEN
+  const template = Template.fromStack(stack);
+
+  template.hasResourceProperties("AWS::S3::Bucket", {
+    BucketName: bucketId1,
+  });
+  template.hasResourceProperties("AWS::IAM::Role", {
+    RoleName: getRoleNameMatcher(bucketId1),
+    AssumeRolePolicyDocument: getAssumeRolePolicyMatcher(bucketId1, xaAwsIds1),
+  });
+  template.hasResourceProperties("AWS::S3::Bucket", {
+    BucketName: bucketId2,
+  });
+  template.hasResourceProperties("AWS::IAM::Role", {
+    RoleName: getRoleNameMatcher(bucketId2),
+    AssumeRolePolicyDocument: getAssumeRolePolicyMatcher(bucketId2, xaAwsIds2),
+  });
+});
+
+test("Single Accessor XAS3 Wrapper", () => {
+  const app = new App();
+  const stack = new Stack(app, "test-stack");
+  const bucketId = "test-xas3-single-accessor";
+  const bucketName = "test-xas3-s";
+  const xaAwsIds = ["000000000000"];
+  // WHEN
+  const existing = new s3.Bucket(stack, bucketId, { bucketName });
+  new CrossAccountS3BucketWrapper(stack, `${bucketId}Wrapper`, {
+    existing,
+    xaAwsIds,
+  });
+  // THEN
+  const template = Template.fromStack(stack);
+
+  template.hasResourceProperties("AWS::S3::Bucket", {
+    BucketName: "test-xas3-s",
+  });
+  template.hasResourceProperties("AWS::IAM::Role", {
+    RoleName: getRoleNameMatcher(bucketId),
+    AssumeRolePolicyDocument: getAssumeRolePolicyMatcher(bucketName, xaAwsIds),
+  });
+});
+
+test("Multi Accessor XAS3 Wrapper", () => {
+  const app = new App();
+  const stack = new Stack(app, "test-stack");
+  const bucketId = "test-xas3-multi-accessor";
+  const bucketName = "test-xas3-m";
+  const xaAwsIds = ["000000000000", "111111111111", "222222222222"];
+  // WHEN
+  const existing = new s3.Bucket(stack, bucketId, { bucketName });
+  new CrossAccountS3BucketWrapper(stack, `${bucketId}Wrapper`, {
+    existing,
+    xaAwsIds,
+  });
+  // THEN
+  const template = Template.fromStack(stack);
+
+  template.hasResourceProperties("AWS::S3::Bucket", {
+    BucketName: "test-xas3-m",
+  });
+  template.hasResourceProperties("AWS::IAM::Role", {
+    RoleName: getRoleNameMatcher(bucketId),
+    AssumeRolePolicyDocument: getAssumeRolePolicyMatcher(bucketName, xaAwsIds),
+  });
+});
+
+test("Longish XAS3 Wrapper", () => {
+  const app = new App();
+  const stack = new Stack(app, "test-stack");
+  const bucketId = "test-xas3-loooooooooooong";
+  const looongBucketName =
+    "test-xas3-loooooooooooooooooooooooooooooooooooongish";
+  // WHEN
+  const existing = new s3.Bucket(stack, bucketId, {
+    bucketName: looongBucketName,
+  });
+  new CrossAccountS3BucketWrapper(stack, `${bucketId}Wrapper`, {
+    existing,
+    xaAwsIds: ["000000000000"],
+  });
+  // THEN
+  const template = Template.fromStack(stack);
+
+  template.hasResourceProperties("AWS::S3::Bucket", {
+    BucketName: looongBucketName,
+  });
+  template.hasResourceProperties("AWS::IAM::Role", {
+    RoleName: getRoleNameMatcher(bucketId),
+  });
+});
+
+test("Several XAS3 Wrappers", () => {
+  const app = new App();
+  const stack = new Stack(app, "test-stack");
+  const bucketId1 = "test-xas3-1";
+  const xaAwsIds1 = ["000000000000"];
+  const bucketId2 = "test-xas3-2";
+  const xaAwsIds2 = ["111111111111"];
+  // WHEN
+  const existing1 = new s3.Bucket(stack, bucketId1, {
+    bucketName: bucketId1,
+  });
+  new CrossAccountS3BucketWrapper(stack, `${bucketId1}Wrapper`, {
+    existing: existing1,
+    xaAwsIds: xaAwsIds1,
+  });
+  const existing2 = new s3.Bucket(stack, bucketId2, {
+    bucketName: bucketId2,
+  });
+  new CrossAccountS3BucketWrapper(stack, `${bucketId2}Wrapper`, {
+    existing: existing2,
     xaAwsIds: xaAwsIds2,
   });
   // THEN
