@@ -2,7 +2,7 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 CODE_CHANGED=$(git diff origin/main --name-only | grep -E "\.(js|ts|json|py)$")
-if [ -z "$VERSION_CHANGED" ]; then
+if [ -z "$CODE_CHANGED" ]; then
   echo "No code changes detected. Skipping tests."
   exit 0
 fi
