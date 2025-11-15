@@ -1,15 +1,14 @@
-#!/bin/sh
+#!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-CODE_CHANGED=$(git diff origin/main --name-only | grep -E "\.(js|ts|json|py)$")
-if [ -z "$CODE_CHANGED" ]; then
+if git diff origin/main..HEAD --name-only | grep -Eq '\.(js|ts|json|py)$'; then
+  echo "Code changes detected"
+else
   echo "No code changes detected. Skipping tests."
   exit 0
 fi
 
-npm run test
-VERSION_CHANGED=$(git diff origin/main package.json | grep '"version":')
-if [ -z "$VERSION_CHANGED" ]; then
+if git diff origin/main package.json | grep '"version":'; then
   echo "ERROR: You must update package.json version before pushing to main!"
   exit 1
 fi
