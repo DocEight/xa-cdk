@@ -1,0 +1,61 @@
+name: Check Tag
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  check-tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # Need to get all history to check that we're on main
+
+      - name: Check branch
+        run: |
+          TAG_COMMIT=$(git rev-parse "$GITHUB_REF")
+          MAIN_COMMIT=$(git rev-parse origin/main)
+
+          if [ "$TAG_COMMIT" != "$MAIN_COMMIT" ]; then
+            echo "Tag commit: $TAG_COMMIT"
+            echo "Main tip commit: $MAIN_COMMIT"
+            echo "Error: Tag does not appear to be on main. Exiting."
+            exit 1
+          fi
+
+      - name: Check tag
+        run: |
+          PACKAGE_VERSION=$(jq -r ".version" package.json)
+
+          if [ "$TAG" != "v${PACKAGE_VERSION}" ]; then
+            echo "Pushed tag: $TAG"
+            echo "Version in package.json: $PACKAGE_VERSION"
+            echo "Error: Tag does not appear to match version in package.json. Exiting."
+            exit 1
+          fi
+        env:
+          TAG: ${{ github.ref_name }} # On push.tags this is the name of the tag
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs:
+      - "check-tag"
+    if: ${{ always() && contains(needs.*.result, 'failure') }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Delete tag
+        run: |
+          git tag -d "$TAG"
+          git push --delete origin "$TAG"
+        env:
+          TAG: ${{ github.ref_name }} # On push.tags this is the name of the tag
+
+      - name: Die
+        run: exit 1
