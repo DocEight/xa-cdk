@@ -27,6 +27,7 @@ export interface CrossAccountManagerProps {
   managerTimeout?: number;
   callerTimeout?: number;
   subclassDir: string;
+  autoRefresh?: boolean;
 }
 
 const hashAccessors = (accessors: { [accessor: string]: string[] }) => {
@@ -74,6 +75,7 @@ export abstract class CrossAccountManager extends Construct {
       managerTimeout = 30, // default timeout of 3 seconds is awful short/fragile
       callerTimeout = 30, // default timeout of 3 seconds is awful short/fragile
       subclassDir,
+      autoRefresh = true,
     } = props;
 
     const xaMgmtRoleArn = `arn:aws:iam::${xaAwsId}:role/${resourceIdentifier}-xa-mgmt`;
@@ -131,7 +133,9 @@ export abstract class CrossAccountManager extends Construct {
     // Util factory to get an AwsSdkCall for the AwsCustomResource
     const callFor = (operation: string) => {
       return {
-        physicalResourceId: PhysicalResourceId.of(cloudfrontAccessorsHash),
+        physicalResourceId: PhysicalResourceId.of(
+          autoRefresh ? Date.now().toString() : cloudfrontAccessorsHash,
+        ),
         service: "Lambda",
         action: "Invoke",
         parameters: {
