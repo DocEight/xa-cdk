@@ -128,14 +128,14 @@ export abstract class CrossAccountManager extends Construct {
       manager,
       targetIdentifier: resourceIdentifier,
     });
-    const physId = autoRefresh
-      ? Date.now().toString()
-      : hashAccessors(cloudfrontAccessors);
+    const cloudfrontAccessorsHash = hashAccessors(cloudfrontAccessors);
 
     // Util factory to get an AwsSdkCall for the AwsCustomResource
     const callFor = (operation: string) => {
       return {
-        physicalResourceId: PhysicalResourceId.of(physId),
+        physicalResourceId: PhysicalResourceId.of(
+          autoRefresh ? Date.now().toString() : cloudfrontAccessorsHash,
+        ),
         service: "Lambda",
         action: "Invoke",
         parameters: {
