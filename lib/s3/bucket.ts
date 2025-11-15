@@ -35,9 +35,9 @@ export class CrossAccountS3Bucket extends CrossAccountConstruct {
 
     // The updater Lambda's execution role will have 11 characters appended to it
     // so let's ensure the bucket name is 52 characters or less
-    if ((this.bucket.bucketName.length ?? 0) > 52) {
+    if ((bucketProps.bucketName?.length ?? 0) > 52) {
       throw new Error(
-        `Bucket name "${this.bucket.bucketName}" must be 52 characters or less.`,
+        `Bucket name "${bucketProps.bucketName}" must be 52 characters or less.`,
       );
     }
 
@@ -85,7 +85,7 @@ export class CrossAccountS3BucketWrapper extends CrossAccountConstruct {
       console.log(
         `WARNING: Cannot length check unresolved bucketName for CrossAccountS3Bucket ${id}.`,
       );
-    } else if ((existing.bucketName.length ?? 0) > 52) {
+    } else if (existing.bucketName.length > 52) {
       throw new Error(
         `Bucket name "${existing.bucketName}" must be 52 characters or less.`,
       );
