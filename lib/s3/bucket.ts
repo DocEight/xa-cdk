@@ -17,7 +17,7 @@ export interface CrossAccountS3BucketWrapperProps
 
 /**
  * CrossAccountS3Bucket creates an S3 bucket with a corresponding IAM role
- * that can be assumed by specific cross-account roles to update the bucket policy.
+ * that can be assumed by specific cross-account resources to update the bucket policy.
  *
  * @remarks
  * - `xaAwsIds` should be the list of AWS account IDs that are allowed to assume
@@ -56,8 +56,19 @@ export class CrossAccountS3Bucket extends CrossAccountConstruct {
   }
 }
 
+/**
+ * CrossAccountS3BucketWrapper takes an existing S3 bucket and creates a corresponding
+ * IAM role that can be assumed by specific cross-account resources to update its
+ * bucket policy.
+ *
+ * @remarks
+ * - `xaAwsIds` should be the list of AWS account IDs that are allowed to assume
+ *   the management role.
+ * - The IAM role created is scoped to `s3:GetBucketPolicy` and `s3:PutBucketPolicy`
+ *   on the bucket only.
+ */
 export class CrossAccountS3BucketWrapper extends CrossAccountConstruct {
-  /** The managed S3 bucket */
+  /** The wrapped S3 bucket */
   public readonly wrappedBucket: s3.IBucket;
 
   constructor(
