@@ -165,25 +165,37 @@ architecture-beta
     service kms-mgmt(logos:aws-lambda)[KMS Updater] in accessor
     junction to-mgmt in accessor
 
+    junction from-s3mgmt
+    junction from-kmsmgmt
+
     group accessed(logos:aws-cloud)[Accessed]
     group s3(logos:aws-s3)[S3] in accessed
     service bucket(logos:aws-s3)[Bucket] in s3
     service bucket-role(logos:aws-iam)[Bucket Updater Role] in s3
+    %% group ssm(logos:aws-systems-manager)[SSM Advanced tier] in accessed
+    service s3ssm(logos:aws-systems-manager)[S3 Accessors] in s3
     group kms(logos:aws-kms)[KMS] in accessed
     service key(logos:aws-kms)[Key] in kms
     service key-role(logos:aws-iam)[Key Updater Role] in kms
+    service kmsssm(logos:aws-systems-manager)[KMS Accessors] in kms
 
     cf:R -[on update]- L:to-mgmt
 
     to-mgmt:T -- B:s3-mgmt
     to-mgmt:B -- T:kms-mgmt
 
-    s3-mgmt:R -[assume role]- L:bucket-role
-    bucket-role:R -[assume role]-> L:bucket
+    s3-mgmt:R -- L:from-s3mgmt
+    from-s3mgmt:R-[assume role]- L:bucket-role
+    bucket-role:R -[update policy]-> L:bucket
+    s3ssm:L -[policy information]- R:bucket
+    from-s3mgmt:R -[store accessor info]-> L:s3ssm
 
-    kms-mgmt:R -[update policy]- L:key-role
+    kms-mgmt:R -- L:from-kmsmgmt
+    from-kmsmgmt:R -[update policy]- L:key-role
     key-role:R -[update policy]-> L:key
-
+    kmsssm:L -[policy information]- R:key
+    from-kmsmgmt:R -[store accessor info]-> L:kmsssm
+    
     key:T -[encryption]- B:bucket
 
 ```
